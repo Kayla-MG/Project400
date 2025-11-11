@@ -17,6 +17,12 @@ type Props = {}
 const Page = (props: Props) => {
   const {top:safeTop} = useSafeAreaInsets();
   const userName = "User";
+  const dailyPlan = {
+    day: "Tuesday",
+    activity: "Football Training",
+    time: "4 to 5 PM",
+    location: "Mercy College Sligo"
+  };
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: safeTop + 20 }]}>
