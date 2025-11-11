@@ -3,21 +3,22 @@ import {
   StyleSheet, 
   Text, 
   TouchableOpacity, 
-  View 
+  StatusBar,
+  View,
 } from "react-native";
 import React from "react";
 import { useRouter } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import Animated, {FadeInDown, FadeInRight} from "react-native-reanimated";
-import { AnimatedView } from "react-native-reanimated/lib/typescript/component/View";
+
 
 const Page = () => {
   const router = useRouter();
-  return (
 
+  return (
     <View style={styles.container}>
       <ImageBackground
-      source={require("@/assets/images/welcome.jpg")}
+      source={require("@/assets/images/jigsaw.jpg")}
       style={{flex:1}}
       resizeMode="cover"
 >
@@ -26,21 +27,22 @@ const Page = () => {
         style={styles.title}
         entering={FadeInRight.delay(300).duration(500)}
         >
-        Welcome!
+        Autism App
         </Animated.Text>
         <Animated.Text
         style={styles.description}
         entering={FadeInRight.delay(700).duration(500)}
         >
-          This is your safe space.Log how you feel.
+          Welcome - This is your safe space. Log how you feel.
         </Animated.Text>
-      <AnimatedView>
+      <Animated.View entering={FadeInDown.delay(1200).duration(500)}>
       <TouchableOpacity
-      onPress={() => router.replace("/(tabs)")}
+      style={styles.btn}
+      onPress={() => router.replace("/(tabs)/home")}
       >
-        <Text style={styles.btnText}>Get started</Text>
+        <Text style={styles.btnText}>Continue</Text>
            </TouchableOpacity>
-           </AnimatedView>
+           </Animated.View>
         </View>
    </ImageBackground>
   </View>
@@ -52,5 +54,45 @@ export default Page;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.blue,
+    // justifyContent: "center",
+    // alignItems: "center",
+  },
+  wrapper:{
+    flex:1,
+    justifyContent:'center',
+    paddingBottom: 50,
+    paddingHorizontal: 30,
+    gap: 10,
+    backgroundColor:'rgba(0, 0, 0, 0.5)',//opacity
+    paddingTop:70,
+  },
+  title:{
+    color: Colors.white,
+    fontSize: 24,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    lineHeight : 30,
+    textAlign: 'center',
+  },
+  description:{
+    color: Colors.white,
+    fontSize:16,
+    fontWeight:'500',
+    letterSpacing: 1.2,
+    lineHeight: 22,
+    textAlign:'center',
+  },
+  btn:{
+    backgroundColor:Colors.orange,
+    paddingVertical:15,
+    marginVertical:20,
+    alignItems:'center',
+    borderRadius:10,
+  },
+  btnText:{
+    color:Colors.white,
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

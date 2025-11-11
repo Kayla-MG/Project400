@@ -4,29 +4,31 @@ import { TabBar } from '@/components/TabBar'
 
 const TabLayout = () => {
   return (
-    <Tabs tabBar={(props) => <TabBar {...props} />}>
+    <Tabs tabBar={(props) => <TabBar {...props} />}
+    screenOptions={{headerShown: false}}
+    >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: "HOME",
         }}
       />
       <Tabs.Screen
-        name="discover"
+        name="log"
         options={{
           title: "LOG",
         }}
       />
       <Tabs.Screen
-        name="saved"
+        name="calm"
         options={{
-          title: "saved",
+          title: "CALM",
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings/LOGIN",
+          title: "Settings",
         }}
       />
     </Tabs>
