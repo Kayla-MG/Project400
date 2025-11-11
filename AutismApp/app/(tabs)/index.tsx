@@ -7,6 +7,8 @@ const Page = (props: Props) => {
   return (
     <View style={styles.container}>
       <Text>Home Screen</Text>
+      <Text>This will display like a emoji face in the right corner 
+        with what mood the user has logged</Text>
     </View>
   )
 }

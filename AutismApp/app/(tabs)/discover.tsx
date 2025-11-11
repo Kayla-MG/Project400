@@ -6,7 +6,9 @@ type Props = {}
 const Page = (props: Props) => {
   return (
     <View style={styles.container}>
-      <Text>Discover Screen</Text>
+      <Text>This is the LOG MOOD page</Text>
+      <Text>User wil log their moods , feelings/meltdowns on this page </Text>
+      <Text>This is their diary</Text>
     </View>
   )
 }
