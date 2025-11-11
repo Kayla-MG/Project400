@@ -8,7 +8,7 @@ const TabLayout = () => {
     screenOptions={{headerShown: false}}
     >
       <Tabs.Screen
-        name="home"
+        name="index"
         options={{
           title: "HOME",
         }}

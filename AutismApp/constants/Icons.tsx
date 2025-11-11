@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 
 export const icon = {
-  home: ({ color, focused }: { color: string; focused: boolean }) =>
+  index: ({ color, focused }: { color: string; focused: boolean }) =>
     focused ? (
       <Ionicons name="home" size={24} color={color} />
     ) : (

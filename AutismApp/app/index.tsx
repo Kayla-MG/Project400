@@ -38,7 +38,7 @@ const Page = () => {
       <Animated.View entering={FadeInDown.delay(1200).duration(500)}>
       <TouchableOpacity
       style={styles.btn}
-      onPress={() => router.replace("/(tabs)/home")}
+      onPress={() => router.replace("/(tabs)")}
       >
         <Text style={styles.btnText}>Continue</Text>
            </TouchableOpacity>
