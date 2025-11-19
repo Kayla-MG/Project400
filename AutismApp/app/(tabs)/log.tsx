@@ -8,8 +8,7 @@ import { Link } from 'expo-router';
 const { width } = Dimensions.get("window");
 
 const Page = () => {
-  //const navigation = useNavigation<any>();
-
+  
   const moods = [
     { name: "Happy", icon: "happy-outline", color: "lime" },
     { name: "Angry", icon: "flame-outline", color: "red",link: "/calm" },
