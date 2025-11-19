@@ -1,35 +1,30 @@
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Dimensions, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Link } from 'expo-router'; 
+import { Colors } from '@/constants/Colors';
 
 const { width } = Dimensions.get("window");
 
 const Page = () => {
-  
-  const moods = [
-    { name: "Happy", icon: "happy-outline", color: "lime" },
-    { name: "Angry", icon: "flame-outline", color: "red",link: "/calm" },
-    { name: "Sad", icon: "sad-outline", color: "dodgerblue", link: "/calm" },
-    { name: "Neutral", icon: "remove-circle-outline", color: "khaki" },
-    { name: "Overwhelmed", icon: "thunderstorm-outline", color: "#ff8c00", link: "/calm" },
-    { name: "Tired", icon: "moon-outline", color: "mediumorchid" },
-    { name: "Calm", icon: "leaf-outline", color: "powderblue" },
-    { name: "Excited", icon: "flash-outline", color: "pink" },
-    { name: "Anxious", icon: "help-circle-outline", color: "peachpuff" },
-  ];
 
-  const handlePress = (mood: string) => {
-    Alert.alert("Mood Logged", `You feel ${mood} today`);
-  };
+  const moods = [
+    { name: "Happy", icon: "happy-outline", color: Colors.green },
+    { name: "Angry", icon: "flame-outline", color: Colors.red, link: "/calm" },
+    { name: "Sad", icon: "sad-outline", color: "blue", link: "/calm" },
+    { name: "Neutral", icon: "remove-circle-outline", color:Colors.neutral },
+    { name: "Overwhelmed", icon: "thunderstorm-outline", color: Colors.orange, link: "/calm" },
+    { name: "Tired", icon: "moon-outline", color: Colors.purple},
+    { name: "Calm", icon: "leaf-outline", color: Colors.blue },
+    { name: "Excited", icon: "flash-outline", color: Colors.pink },
+    { name: "Anxious", icon: "help-circle-outline", color: Colors.peach },
+  ];
 
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <Text style={styles.title}>How are you feeling?</Text>
 
-       <View style={styles.grid}>
+      <View style={styles.grid}>
         {moods.map((m) => {
           const content = (
             <TouchableOpacity style={styles.tile}>
@@ -51,7 +46,6 @@ const Page = () => {
     </ScrollView>
   );
 };
-
 
 const styles = StyleSheet.create({
   scroll: {
@@ -83,6 +77,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 18,
     fontWeight: "600",
+    textAlign: "center",
   },
 });
 
