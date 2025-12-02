@@ -1,25 +1,32 @@
 import { Ionicons } from "@expo/vector-icons";
 
+// Type definition for the icon function
+interface IconProps {
+  color: string;
+  focused: boolean;
+}
+
+// NOTE: Using stats-chart for Home to represent a dashboard/summary.
 export const icon = {
-  index: ({ color, focused }: { color: string; focused: boolean }) =>
+  index: ({ color, focused }: IconProps) =>
     focused ? (
-      <Ionicons name="home" size={24} color={color} />
+      <Ionicons name="stats-chart" size={24} color={color} />
     ) : (
-      <Ionicons name="home-outline" size={24} color={color} />
+      <Ionicons name="stats-chart-outline" size={24} color={color} />
     ),
-  log: ({ color, focused }: { color: string; focused: boolean }) =>
+  log: ({ color, focused }: IconProps) =>
     focused ? (
       <Ionicons name="book" size={25} color={color} />
     ) : (
       <Ionicons name="book-outline" size={25} color={color} />
     ),
-  calm: ({ color, focused }: { color: string; focused: boolean }) =>
+  calm: ({ color, focused }: IconProps) =>
     focused ? (
-      <Ionicons name="happy" size={22} color={color} />
+      <Ionicons name="moon" size={22} color={color} />
     ) : (
-      <Ionicons name="happy-outline" size={22} color={color} />
+      <Ionicons name="moon-outline" size={22} color={color} />
     ),
-  settings: ({ color, focused }: { color: string; focused: boolean }) =>
+  settings: ({ color, focused }: IconProps) =>
     focused ? (
       <Ionicons name="settings" size={24} color={color} />
     ) : (
