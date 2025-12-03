@@ -17,7 +17,7 @@ const Page = () => {
     { name: "Tired", icon: "moon-outline", color: Colors.purple},
     { name: "Calm", icon: "leaf-outline", color: Colors.blue },
     { name: "Excited", icon: "flash-outline", color: Colors.pink },
-    { name: "Anxious", icon: "help-circle-outline", color: Colors.peach },
+    { name: "Anxious", icon: "help-circle-outline", color: Colors.peach, link: "/calm" },
   ];
 
   return (

@@ -1,38 +1,269 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Linking, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    Easing,
+    useAnimatedProps,
+} from 'react-native-reanimated';
+import { repeat, withTiming } from 'react-native-reanimated'
+
+// Since we are using Animated styles on the Circle/SVG, we need to register the component
+// This is necessary for Reanimated to work correctly on non-native components like View/Circle
+const AnimatedCircle = Animated.createAnimatedComponent(View);
 
 const { width } = Dimensions.get("window");
 
-// --- Design Constants (Defined here for local use) ---
+// --- Design Constants ---
 const PRIMARY_COLOR = '#4C8A8C'; // Calming Teal/Green
 const ACCENT_COLOR = '#FFC107'; // Yellow accent
 const BACKGROUND_COLOR = '#F5F5F5';
 const TILE_WIDTH = width / 3 - 20;
-const INITIAL_COUNTDOWN_SECONDS = 10;
-const MARCONI_UNION_LINK = 'https://www.youtube.com/watch?v=eQ6--TNre9k&list=PLtneXHSzis5GjlpcsTs8IuD3ktIz5u8bQ';
+const MARCONI_UNION_LINK = 'https://www.youtube.com/watch?v=UqQh-d1-678';
+const BREATH_CYCLE_DURATION = 4000; // 4 seconds per phase (Inhale/Exhale)
 
 
-// --- Component: Countdown Timer Tool ---
+// --- Component: Deep Breathing Guide (Tool 1) ---
+const DeepBreathingGuide = ({ onStop }: { onStop: () => void }) => {
+    const scale = useSharedValue(1);
+    const [instruction, setInstruction] = useState('INHALE');
+    const instructionIntervalRef = useRef<number | null>(null);
+
+    // Animation Logic
+    useEffect(() => {
+        // Start animation loop: Scale from 1 (small) to 2 (large) and back, repeated indefinitely
+        scale.value = repeat(
+            withTiming(2, { duration: BREATH_CYCLE_DURATION, easing: Easing.inOut(Easing.ease) }), 
+            -1, // -1 means repeat indefinitely
+            true // reverse=true means it goes from 1 to 2, then 2 back to 1
+        );
+
+        // Start instruction timer (4s Inhale, 4s Exhale)
+        let currentInstruction = 'INHALE';
+        setInstruction(currentInstruction);
+        
+        if (instructionIntervalRef.current) {
+            clearInterval(instructionIntervalRef.current);
+        }
+        
+        instructionIntervalRef.current = setInterval(() => {
+            currentInstruction = currentInstruction === 'INHALE' ? 'EXHALE' : 'INHALE';
+            setInstruction(currentInstruction);
+        }, BREATH_CYCLE_DURATION) as unknown as number;
+
+        // Cleanup on unmount
+        return () => {
+            scale.value = withTiming(1);
+            if (instructionIntervalRef.current) {
+                clearInterval(instructionIntervalRef.current);
+                instructionIntervalRef.current = null;
+            }
+        };
+    }, []); 
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: scale.value }],
+        };
+    });
+
+    return (
+        <View style={breathingStyles.container}>
+            <Text style={breathingStyles.header}>Deep Breathing Guide</Text>
+            
+            {/* Visual Guide Circle */}
+            <View style={breathingStyles.breathingArea}>
+                <AnimatedCircle style={[breathingStyles.circle, animatedStyle]} />
+                <Text style={breathingStyles.instructionText}>
+                    {instruction}
+                </Text>
+            </View>
+
+            {/* Back Button */}
+            <TouchableOpacity 
+                style={styles.closeButton} 
+                onPress={onStop} 
+            >
+                <Text style={styles.closeButtonText}>← Back to Tools</Text>
+            </TouchableOpacity>
+        </View>
+    );
+};
+// --- END DeepBreathingGuide Component ---
+
+
+// --- Component: Visual Calming Tool (Tool 2) ---
+const VisualCalmGuide = ({ onStop }: { onStop: () => void }) => {
+    const calmingVideos = [
+        { name: 'Northern Lights', icon: 'sparkles-outline', url: 'https://www.youtube.com/watch?v=I8XAzVNSA84', color: '#56CCF2' },
+        { name: 'Ocean Waves', icon: 'water-outline', url: 'https://www.youtube.com/watch?v=r_VQpsG7EIY', color: '#2D9CDB' },
+        { name: 'Soothing Bubbles', icon: 'balloon-outline', url: 'https://youtu.be/2pXFIYjMXKk?si=ZWeh-DdZuaz7yaVZ', color: '#BB6BD9' },
+    ];
+
+    const handleLinkPress = async (url: string) => {
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+            await Linking.openURL(url);
+        } else {
+            Alert.alert('Link Error', 'Cannot open link. Ensure YouTube is available.', [{ text: 'OK' }]);
+        }
+    };
+
+    return (
+        <View style={visualStyles.container}>
+            <Text style={visualStyles.header}>Visual Calming Focus</Text>
+            <Text style={visualStyles.subtitle}>Focus on predictable, low-stimulus motion to regain control.</Text>
+            
+            <View style={visualStyles.grid}>
+                {calmingVideos.map(video => (
+                    <TouchableOpacity
+                        key={video.name}
+                        style={[visualStyles.videoButton, { backgroundColor: video.color }]}
+                        onPress={() => handleLinkPress(video.url)}
+                    >
+                        <Ionicons name={video.icon as any} size={40} color="white" />
+                        <Text style={visualStyles.videoButtonText}>{video.name}</Text>
+                        <Text style={visualStyles.videoButtonSubtext}>(Opens YouTube)</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+            
+            <TouchableOpacity onPress={onStop} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>← Back to Tools</Text>
+            </TouchableOpacity>
+        </View>
+    );
+};
+// --- END VisualCalmGuide Component ---
+
+
+// --- Component: Stretch/Move Guide (Tool 3) ---
+const StretchMoveGuide = ({ onStop }: { onStop: () => void }) => {
+    return (
+        <View style={stretchStyles.container}>
+            <Text style={stretchStyles.header}>Move to Regulate</Text>
+            <Text style={stretchStyles.subtitle}>Movement helps shift focus and release tension.</Text>
+
+            <View style={stretchStyles.card}>
+                <Ionicons name="walk-outline" size={36} color={PRIMARY_COLOR} />
+                <Text style={stretchStyles.cardTitle}>Option 1: Go for a Short Walk</Text>
+                <Text style={stretchStyles.cardContent}>
+                    Step away from the current environment. Take 5 minutes to walk slowly in a quiet area. Focus on the feeling of your feet hitting the ground.
+                </Text>
+            </View>
+
+            <View style={stretchStyles.card}>
+                <Ionicons name="body-outline" size={36} color={PRIMARY_COLOR} />
+                <Text style={stretchStyles.cardTitle}>Option 2: Simple Stretches</Text>
+                <Text style={stretchStyles.cardContent}>
+                    Try slow, deliberate movements:\n
+                    1. Raise both arms high and stretch your back.\n
+                    2. Slowly turn your head side-to-side (5 times).\n
+                    3. Gently roll your shoulders back (5 times).
+                </Text>
+            </View>
+            
+            <TouchableOpacity onPress={onStop} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>← Back to Tools</Text>
+            </TouchableOpacity>
+        </View>
+    );
+};
+// --- END StretchMoveGuide Component ---
+
+
+// --- Component: External Link Display (Tool 4: Listen to Music) ---
+const ExternalMusicLink = ({ onClose }: { onClose: () => void }) => {
+    const handleLinkPress = async (url: string) => {
+        const supported = await Linking.canOpenURL(url);
+        
+        if (supported) {
+            await Linking.openURL(url);
+        } else {
+            Alert.alert('App Not Found', 'Cannot open the link. Please ensure the YouTube app or a browser is available.', [{ text: 'OK' }]);
+        }
+    };
+
+    return (
+        <View style={styles.linkContainer}>
+            <Text style={styles.linkTitle}>Marconi Union - Weightless</Text>
+            <Text style={styles.linkSubtitle}>Tap below to play on YouTube (Opens externally):</Text>
+            
+            <View style={styles.buttonGroup}>
+                <TouchableOpacity 
+                    style={styles.linkButton} 
+                    onPress={() => handleLinkPress(MARCONI_UNION_LINK)}
+                >
+                    <Ionicons name="logo-youtube" size={24} color="white" />
+                    <Text style={styles.linkButtonText}>Launch YouTube</Text>
+                </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>Close Options</Text>
+            </TouchableOpacity>
+        </View>
+    );
+};
+// --- END ExternalMusicLink Component ---
+
+
+// --- Component: Fidget / Squeeze Guide (Tool 5) ---
+const FidgetSqueezeGuide = ({ onStop }: { onStop: () => void }) => {
+    return (
+        <View style={fidgetStyles.container}>
+            <Text style={fidgetStyles.header}>Fidget & Squeeze</Text>
+            <Text style={fidgetStyles.subtitle}>Tactile input helps ground you and redirect energy.</Text>
+            
+            <View style={fidgetStyles.card}>
+                <Ionicons name="bulb-outline" size={30} color={PRIMARY_COLOR} />
+                <Text style={fidgetStyles.cardTitle}>Find Your Tool</Text>
+                <Text style={fidgetStyles.cardContent}>
+                    Engage with a favorite sensory object (stress ball, soft fabric, fidget spinner, or tangle toy). If you have a weighted blanket or vest, using it now may help.
+                </Text>
+            </View>
+            
+            <View style={fidgetStyles.card}>
+                <Ionicons name="swap-horizontal-outline" size={30} color={PRIMARY_COLOR} />
+                <Text style={fidgetStyles.cardTitle}>The Squeeze & Release</Text>
+                <Text style={fidgetStyles.cardContent}>
+                    Squeeze your hands/fists tightly for 5 seconds, focusing on the tension. Then, release completely. Repeat 3 times to release physical tension.
+                </Text>
+            </View>
+            
+            <TouchableOpacity onPress={onStop} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>← Back to Tools</Text>
+            </TouchableOpacity>
+        </View>
+    );
+};
+// --- END FidgetSqueezeGuide Component ---
+
+
+// --- Component: Countdown Timer Tool (Tool 6) ---
 const CountdownTimer = ({ onStop }: { onStop: () => void }) => {
+    const INITIAL_COUNTDOWN_SECONDS = 10;
     const [timeLeft, setTimeLeft] = useState(INITIAL_COUNTDOWN_SECONDS);
     const [isRunning, setIsRunning] = useState(false);
     const [isRepeating, setIsRepeating] = useState(false);
-    const intervalRef = useRef<number | null>(null);
-    // Timing logic (runs every second)
+    const intervalRef = useRef<number | null>(null); 
+
     useEffect(() => {
         if (isRunning) {
+            if (intervalRef.current !== null) {
+                clearInterval(intervalRef.current);
+            }
+            
             intervalRef.current = setInterval(() => {
                 setTimeLeft(prevTime => {
                     if (prevTime === 1) {
                         clearInterval(intervalRef.current!);
                         if (isRepeating) {
-                            // Reset and restart if repeating is enabled
                             setTimeLeft(INITIAL_COUNTDOWN_SECONDS);
                             return INITIAL_COUNTDOWN_SECONDS;
                         } else {
                             setIsRunning(false);
-                            // Show a brief completion message
                             setTimeout(() => {
                                 Alert.alert('Timer Done', '10 seconds complete! Tap "Back to Tools" when ready.');
                             }, 100);
@@ -41,38 +272,38 @@ const CountdownTimer = ({ onStop }: { onStop: () => void }) => {
                     }
                     return prevTime - 1;
                 });
-            }, 1000);
-        } else if (intervalRef.current) {
+            }, 1000) as unknown as number; 
+        } else if (intervalRef.current !== null) {
             clearInterval(intervalRef.current);
+            intervalRef.current = null;
         }
 
-        // Cleanup function for when the component unmounts
         return () => {
-            if (intervalRef.current) {
+            if (intervalRef.current !== null) {
                 clearInterval(intervalRef.current);
+                intervalRef.current = null;
             }
         };
     }, [isRunning, isRepeating]);
 
     const toggleRun = () => {
         if (timeLeft === 0) {
-            // If timer finished, reset and start
             setTimeLeft(INITIAL_COUNTDOWN_SECONDS);
             setIsRunning(true);
         } else {
-            // Toggle running state
             setIsRunning(!isRunning);
         }
     };
 
     const resetTimer = () => {
-        clearInterval(intervalRef.current!);
+        if (intervalRef.current !== null) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
         setIsRunning(false);
         setIsRepeating(false);
         setTimeLeft(INITIAL_COUNTDOWN_SECONDS);
     };
-
-    const progress = timeLeft / INITIAL_COUNTDOWN_SECONDS;
 
     return (
         <View style={timerStyles.container}>
@@ -81,7 +312,6 @@ const CountdownTimer = ({ onStop }: { onStop: () => void }) => {
             {/* Large Visual Timer Display */}
             <View style={[timerStyles.timerDisplay, { borderColor: isRunning ? PRIMARY_COLOR : '#ccc' }]}>
                 <Text style={timerStyles.timerText}>{timeLeft}</Text>
-                <View style={[timerStyles.progressBar, { width: `${progress * 100}%` }]} />
             </View>
 
             {/* Controls */}
@@ -89,7 +319,7 @@ const CountdownTimer = ({ onStop }: { onStop: () => void }) => {
                 <TouchableOpacity 
                     style={timerStyles.controlButton} 
                     onPress={toggleRun}
-                    disabled={timeLeft === 0 && !isRepeating} // Disable if finished and not repeating
+                    disabled={timeLeft === 0 && !isRepeating}
                 >
                     <Ionicons name={isRunning ? "pause-outline" : "play-outline"} size={30} color="#FFF" />
                     <Text style={timerStyles.controlButtonText}>{isRunning ? 'Pause' : 'Start'}</Text>
@@ -126,73 +356,75 @@ const CountdownTimer = ({ onStop }: { onStop: () => void }) => {
 // --- END CountdownTimer Component ---
 
 
-// --- Component: External Link Display (YouTube Only) ---
-const ExternalMusicLink = ({ onClose }: { onClose: () => void }) => {
-    const handleLinkPress = async (url: string) => {
-        const supported = await Linking.canOpenURL(url);
-        
-        if (supported) {
-            await Linking.openURL(url);
-        } else {
-            Alert.alert('App Not Found', 'Cannot open the link. Please ensure the YouTube app or a browser is available.', [{ text: 'OK' }]);
-        }
-    };
-
-    return (
-        <View style={styles.linkContainer}>
-            <Text style={styles.linkTitle}>Marconi Union - Weightless</Text>
-            <Text style={styles.linkSubtitle}>Tap below to play on YouTube (Opens externally):</Text>
-            
-            <View style={styles.buttonGroup}>
-                <TouchableOpacity 
-                    style={styles.linkButton} 
-                    onPress={() => handleLinkPress(MARCONI_UNION_LINK)}
-                >
-                    <Ionicons name="logo-youtube" size={24} color="white" />
-                    <Text style={styles.linkButtonText}>Launch YouTube</Text>
-                </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>Close Options</Text>
-            </TouchableOpacity>
-        </View>
-    );
-};
-// --- END ExternalMusicLink Component ---
-
-
 // --- Main Calm Down Page ---
+interface Tool { 
+    name: string;
+    icon: string;
+    color: string;
+    actionType: 'internal' | 'link' | 'timer' | 'breathing' | 'stretch' | 'visual' | 'fidget';
+}
+
 const CalmDownPage = () => {
   const [showExternalMusicLink, setShowExternalMusicLink] = useState(false);
-  const [showTimer, setShowTimer] = useState(false); // New state for Timer visibility
+  const [showTimer, setShowTimer] = useState(false);
+  const [showBreathing, setShowBreathing] = useState(false);
+  const [showStretchMove, setShowStretchMove] = useState(false);
+  const [showVisualCalm, setShowVisualCalm] = useState(false); 
+  const [showFidget, setShowFidget] = useState(false); 
 
   const tools: Tool[] = [
-    { name: 'Deep Breathing', icon: 'leaf-outline', color: '#6FCF97', actionType: 'internal' },
-    { name: 'Visual Calming', icon: 'eye-outline', color: '#56CCF2', actionType: 'internal' },
-    { name: 'Stretch / Move', icon: 'walk-outline', color: '#F2C94C', actionType: 'internal' },
+    { name: 'Deep Breathing', icon: 'leaf-outline', color: '#6FCF97', actionType: 'breathing' },
+    { name: 'Visual Calming', icon: 'eye-outline', color: '#56CCF2', actionType: 'visual' }, 
+    { name: 'Stretch / Move', icon: 'walk-outline', color: '#F2C94C', actionType: 'stretch' },
     { name: 'Listen To Music', icon: 'musical-notes-outline', color: '#8A2BE2', actionType: 'link' }, 
-    { name: 'Fidget / Squeeze', icon: 'hand-left-outline', color: '#F2994A', actionType: 'internal' },
-    // Update this tool to launch the new Timer component
+    { name: 'Fidget / Squeeze', icon: 'hand-left-outline', color: '#F2994A', actionType: 'fidget' }, 
     { name: 'Countdown / Timer', icon: 'time-outline', color: '#2D9CDB', actionType: 'timer' },
   ];
 
   const handleToolPress = (tool: Tool) => {
+    // Reset all views before opening the selected one
+    setShowExternalMusicLink(false);
+    setShowTimer(false);
+    setShowBreathing(false);
+    setShowStretchMove(false);
+    setShowVisualCalm(false);
+    setShowFidget(false);
+
     if (tool.actionType === 'link') {
       setShowExternalMusicLink(true);
     } else if (tool.actionType === 'timer') {
-      setShowTimer(true); // Show the Timer component
+      setShowTimer(true);
+    } else if (tool.actionType === 'breathing') { 
+      setShowBreathing(true); 
+    } else if (tool.actionType === 'stretch') { 
+      setShowStretchMove(true);
+    } else if (tool.actionType === 'visual') { 
+      setShowVisualCalm(true); 
+    } else if (tool.actionType === 'fidget') { 
+      setShowFidget(true); 
     } else {
-      // Logic for internal tools (Breathing, Visual Calming, etc.)
       console.log(`Launching internal tool: ${tool.name}`);
       Alert.alert('Tool Selected', `Launching internal ${tool.name} tool.`, [{ text: 'OK' }]);
     }
   };
   
-  // Conditional rendering: If timer is active, show ONLY the timer.
+  // CONDITIONAL RENDERING CHAIN (Only one component renders at a time)
+  if (showBreathing) {
+    return <DeepBreathingGuide onStop={() => setShowBreathing(false)} />;
+  }
   if (showTimer) {
     return <CountdownTimer onStop={() => setShowTimer(false)} />;
   }
+  if (showStretchMove) {
+    return <StretchMoveGuide onStop={() => setShowStretchMove(false)} />;
+  }
+  if (showVisualCalm) {
+    return <VisualCalmGuide onStop={() => setShowVisualCalm(false)} />;
+  }
+  if (showFidget) {
+    return <FidgetSqueezeGuide onStop={() => setShowFidget(false)} />;
+  }
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -281,7 +513,20 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 30,
   },
-  // --- MUSIC LINK STYLES ---
+  // --- Close Button Styling (Reused) ---
+  closeButton: {
+    marginTop: 40,
+    padding: 10,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 8,
+    alignSelf: 'center',
+  },
+  closeButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // --- MUSIC LINK STYLES (ExternalMusicLink) ---
   linkContainer: {
     width: '100%',
     backgroundColor: '#FFF',
@@ -330,18 +575,9 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
   },
-  closeButton: {
-    marginTop: 15,
-    padding: 8,
-    alignSelf: 'center',
-  },
-  closeButtonText: {
-    color: PRIMARY_COLOR,
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  }
 });
 
+// --- STYLES FOR COUNTDOWN TIMER ---
 const timerStyles = StyleSheet.create({
     container: {
         flex: 1,
@@ -361,11 +597,9 @@ const timerStyles = StyleSheet.create({
         height: 250,
         borderRadius: 125,
         borderWidth: 10,
-        // borderColor is set dynamically in the component
         backgroundColor: '#FFF',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden', // Required for the progress bar animation
         marginBottom: 40,
     },
     timerText: {
@@ -373,15 +607,6 @@ const timerStyles = StyleSheet.create({
         fontWeight: '200',
         color: PRIMARY_COLOR,
         zIndex: 2,
-    },
-    progressBar: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        height: '100%',
-        backgroundColor: '#D6EAF8', // Light blue progress fill
-        opacity: 0.8,
-        // width is set dynamically in the component
     },
     controlsContainer: {
         flexDirection: 'row',
@@ -416,6 +641,92 @@ const timerStyles = StyleSheet.create({
         color: PRIMARY_COLOR,
         marginRight: 10,
     },
+});
+
+// --- STYLES FOR DEEP BREATHING GUIDE ---
+const breathingStyles = StyleSheet.create({
+    container: {
+        flex: 1,
+        width: '100%',
+        padding: 30,
+        alignItems: 'center',
+        backgroundColor: BACKGROUND_COLOR,
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: PRIMARY_COLOR,
+        marginBottom: 60,
+    },
+    breathingArea: {
+        width: 250,
+        height: 250,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 60,
+    },
+    circle: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: PRIMARY_COLOR,
+        position: 'absolute',
+        opacity: 0.7,
+    },
+    instructionText: {
+        fontSize: 30,
+        fontWeight: '900',
+        color: PRIMARY_COLOR,
+        position: 'absolute',
+        zIndex: 10,
+    }
+});
+
+// --- STYLES FOR STRETCH / MOVE GUIDE ---
+const stretchStyles = StyleSheet.create({
+    container: {
+        flex: 1,
+        width: '100%',
+        padding: 30,
+        alignItems: 'center',
+        backgroundColor: BACKGROUND_COLOR,
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: PRIMARY_COLOR,
+        marginBottom: 10,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 30,
+        textAlign: 'center',
+    },
+    card: {
+        width: '100%',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 15,
+        padding: 20,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 4,
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: PRIMARY_COLOR,
+        marginTop: 10,
+        marginBottom: 5,
+    },
+    cardContent: {
+        fontSize: 15,
+        color: '#333',
+        lineHeight: 22,
+    },
     backButton: {
         marginTop: 40,
         padding: 10,
@@ -425,4 +736,105 @@ const timerStyles = StyleSheet.create({
         fontSize: 16,
         textDecorationLine: 'underline',
     }
+});
+
+// --- STYLES FOR VISUAL CALM GUIDE ---
+const visualStyles = StyleSheet.create({
+    container: {
+        flex: 1,
+        width: '100%',
+        padding: 30,
+        alignItems: 'center',
+        backgroundColor: BACKGROUND_COLOR,
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: PRIMARY_COLOR,
+        marginBottom: 10,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 30,
+        textAlign: 'center',
+    },
+    grid: {
+        flexDirection: 'column',
+        gap: 15,
+        width: '100%',
+    },
+    videoButton: {
+        width: '100%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 4,
+    },
+    videoButtonText: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: 'white',
+        marginLeft: 15,
+    },
+    videoButtonSubtext: {
+        fontSize: 10,
+        color: 'rgba(255, 255, 255, 0.8)',
+        marginLeft: 'auto',
+        alignSelf: 'flex-end',
+    }
+});
+
+// --- STYLES FOR FIDGET GUIDE ---
+const fidgetStyles = StyleSheet.create({
+    container: {
+        flex: 1,
+        width: '100%',
+        padding: 30,
+        alignItems: 'center',
+        backgroundColor: BACKGROUND_COLOR,
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: PRIMARY_COLOR,
+        marginBottom: 10,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 30,
+        textAlign: 'center',
+    },
+    card: {
+        width: '100%',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 15,
+        padding: 20,
+        marginBottom: 20,
+        borderLeftWidth: 4,
+        borderLeftColor: ACCENT_COLOR,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 4,
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: PRIMARY_COLOR,
+        marginTop: 10,
+        marginBottom: 5,
+    },
+    cardContent: {
+        fontSize: 15,
+        color: '#333',
+        lineHeight: 22,
+    },
 });
