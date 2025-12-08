@@ -7,7 +7,7 @@ import Animated, {
     Easing,
     useAnimatedProps,
 } from 'react-native-reanimated';
-import { repeat, withTiming } from 'react-native-reanimated'
+import {  withTiming } from 'react-native-reanimated'
 
 // Since we are using Animated styles on the Circle/SVG, we need to register the component
 // This is necessary for Reanimated to work correctly on non-native components like View/Circle
@@ -72,7 +72,7 @@ const DeepBreathingGuide = ({ onStop }: { onStop: () => void }) => {
         <View style={breathingStyles.container}>
             <Text style={breathingStyles.header}>Deep Breathing Guide</Text>
             
-            {/* Visual Guide Circle */}
+            {/* Visual Guide Circle*/ }
             <View style={breathingStyles.breathingArea}>
                 <AnimatedCircle style={[breathingStyles.circle, animatedStyle]} />
                 <Text style={breathingStyles.instructionText}>
