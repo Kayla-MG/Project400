@@ -157,9 +157,9 @@ const StretchMoveGuide = ({ onStop }: { onStop: () => void }) => {
                 <Ionicons name="body-outline" size={36} color={PRIMARY_COLOR} />
                 <Text style={stretchStyles.cardTitle}>Option 2: Simple Stretches</Text>
                 <Text style={stretchStyles.cardContent}>
-                    Try slow, deliberate movements:\n
-                    1. Raise both arms high and stretch your back.\n
-                    2. Slowly turn your head side-to-side (5 times).\n
+                    Try slow, deliberate movements:
+                    1. Raise both arms high and stretch your back.
+                    2. Slowly turn your head side-to-side (5 times).
                     3. Gently roll your shoulders back (5 times).
                 </Text>
             </View>
