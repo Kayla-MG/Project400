@@ -19,78 +19,8 @@ const { width } = Dimensions.get("window");
 const PRIMARY_COLOR = '#4C8A8C'; // Calming Teal/Green
 const ACCENT_COLOR = '#FFC107'; // Yellow accent
 const BACKGROUND_COLOR = '#F5F5F5';
-const TILE_WIDTH = width / 3 - 20;
+const TILE_WIDTH = width / 2 - 20;
 const MARCONI_UNION_LINK = 'https://www.youtube.com/watch?v=UqQh-d1-678';
-const BREATH_CYCLE_DURATION = 4000; // 4 seconds per phase (Inhale/Exhale)
-
-
-// --- Component: Deep Breathing Guide (Tool 1) ---
-const DeepBreathingGuide = ({ onStop }: { onStop: () => void }) => {
-    const scale = useSharedValue(1);
-    const [instruction, setInstruction] = useState('INHALE');
-    const instructionIntervalRef = useRef<number | null>(null);
-
-    // Animation Logic
-    useEffect(() => {
-        // Start animation loop: Scale from 1 (small) to 2 (large) and back, repeated indefinitely
-        scale.value = repeat(
-            withTiming(2, { duration: BREATH_CYCLE_DURATION, easing: Easing.inOut(Easing.ease) }), 
-            -1, // -1 means repeat indefinitely
-            true // reverse=true means it goes from 1 to 2, then 2 back to 1
-        );
-
-        // Start instruction timer (4s Inhale, 4s Exhale)
-        let currentInstruction = 'INHALE';
-        setInstruction(currentInstruction);
-        
-        if (instructionIntervalRef.current) {
-            clearInterval(instructionIntervalRef.current);
-        }
-        
-        instructionIntervalRef.current = setInterval(() => {
-            currentInstruction = currentInstruction === 'INHALE' ? 'EXHALE' : 'INHALE';
-            setInstruction(currentInstruction);
-        }, BREATH_CYCLE_DURATION) as unknown as number;
-
-        // Cleanup on unmount
-        return () => {
-            scale.value = withTiming(1);
-            if (instructionIntervalRef.current) {
-                clearInterval(instructionIntervalRef.current);
-                instructionIntervalRef.current = null;
-            }
-        };
-    }, []); 
-
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ scale: scale.value }],
-        };
-    });
-
-    return (
-        <View style={breathingStyles.container}>
-            <Text style={breathingStyles.header}>Deep Breathing Guide</Text>
-            
-            {/* Visual Guide Circle*/ }
-            <View style={breathingStyles.breathingArea}>
-                <AnimatedCircle style={[breathingStyles.circle, animatedStyle]} />
-                <Text style={breathingStyles.instructionText}>
-                    {instruction}
-                </Text>
-            </View>
-
-            {/* Back Button */}
-            <TouchableOpacity 
-                style={styles.closeButton} 
-                onPress={onStop} 
-            >
-                <Text style={styles.closeButtonText}>← Back to Tools</Text>
-            </TouchableOpacity>
-        </View>
-    );
-};
-// --- END DeepBreathingGuide Component ---
 
 
 // --- Component: Visual Calming Tool (Tool 2) ---
@@ -307,7 +237,9 @@ const CountdownTimer = ({ onStop }: { onStop: () => void }) => {
 
     return (
         <View style={timerStyles.container}>
-            <Text style={timerStyles.header}>Focus Countdown</Text>
+            <Text style={timerStyles.header}>
+                - Focus Countdown - 
+                Take a deep breath to the timer if you need</Text>
             
             {/* Large Visual Timer Display */}
             <View style={[timerStyles.timerDisplay, { borderColor: isRunning ? PRIMARY_COLOR : '#ccc' }]}>
@@ -361,19 +293,17 @@ interface Tool {
     name: string;
     icon: string;
     color: string;
-    actionType: 'internal' | 'link' | 'timer' | 'breathing' | 'stretch' | 'visual' | 'fidget';
+    actionType: 'internal' | 'link' | 'timer'| 'stretch' | 'visual' | 'fidget';
 }
 
 const CalmDownPage = () => {
   const [showExternalMusicLink, setShowExternalMusicLink] = useState(false);
   const [showTimer, setShowTimer] = useState(false);
-  const [showBreathing, setShowBreathing] = useState(false);
   const [showStretchMove, setShowStretchMove] = useState(false);
   const [showVisualCalm, setShowVisualCalm] = useState(false); 
   const [showFidget, setShowFidget] = useState(false); 
 
   const tools: Tool[] = [
-    { name: 'Deep Breathing', icon: 'leaf-outline', color: '#6FCF97', actionType: 'breathing' },
     { name: 'Visual Calming', icon: 'eye-outline', color: '#56CCF2', actionType: 'visual' }, 
     { name: 'Stretch / Move', icon: 'walk-outline', color: '#F2C94C', actionType: 'stretch' },
     { name: 'Listen To Music', icon: 'musical-notes-outline', color: '#8A2BE2', actionType: 'link' }, 
@@ -385,7 +315,6 @@ const CalmDownPage = () => {
     // Reset all views before opening the selected one
     setShowExternalMusicLink(false);
     setShowTimer(false);
-    setShowBreathing(false);
     setShowStretchMove(false);
     setShowVisualCalm(false);
     setShowFidget(false);
@@ -394,8 +323,6 @@ const CalmDownPage = () => {
       setShowExternalMusicLink(true);
     } else if (tool.actionType === 'timer') {
       setShowTimer(true);
-    } else if (tool.actionType === 'breathing') { 
-      setShowBreathing(true); 
     } else if (tool.actionType === 'stretch') { 
       setShowStretchMove(true);
     } else if (tool.actionType === 'visual') { 
@@ -409,9 +336,6 @@ const CalmDownPage = () => {
   };
   
   // CONDITIONAL RENDERING CHAIN (Only one component renders at a time)
-  if (showBreathing) {
-    return <DeepBreathingGuide onStop={() => setShowBreathing(false)} />;
-  }
   if (showTimer) {
     return <CountdownTimer onStop={() => setShowTimer(false)} />;
   }
@@ -641,45 +565,6 @@ const timerStyles = StyleSheet.create({
         color: PRIMARY_COLOR,
         marginRight: 10,
     },
-});
-
-// --- STYLES FOR DEEP BREATHING GUIDE ---
-const breathingStyles = StyleSheet.create({
-    container: {
-        flex: 1,
-        width: '100%',
-        padding: 30,
-        alignItems: 'center',
-        backgroundColor: BACKGROUND_COLOR,
-    },
-    header: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: PRIMARY_COLOR,
-        marginBottom: 60,
-    },
-    breathingArea: {
-        width: 250,
-        height: 250,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 60,
-    },
-    circle: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: PRIMARY_COLOR,
-        position: 'absolute',
-        opacity: 0.7,
-    },
-    instructionText: {
-        fontSize: 30,
-        fontWeight: '900',
-        color: PRIMARY_COLOR,
-        position: 'absolute',
-        zIndex: 10,
-    }
 });
 
 // --- STYLES FOR STRETCH / MOVE GUIDE ---
