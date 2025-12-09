@@ -41,15 +41,15 @@ app.post('/api/log/mood', async (req, res) => {
             [userId, userId.substring(0, 8)]
         );
 
-        // --- Step 2: Get the numerical ID for the feeling name (Data Integrity Check) ---
-        const [feelingResult] = await pool.query(
-            'SELECT feeling_id FROM feelings WHERE name = ?',
-            [feelingName]
-        );
+     // server.js (Step 2)
+    const [feelingResult] = await pool.query(
+    'SELECT feeling_id FROM feelings WHERE name = ?',
+    [feelingName] // <--- Here, feelingName = 'Angry'
+);
 
-        if (feelingResult.length === 0) {
-            return res.status(404).json({ error: `Invalid feeling name: ${feelingName}.` });
-        }
+    if (feelingResult.length === 0) {
+    return res.status(404).json({ error: `Invalid feeling name: ${feelingName}.` });
+}
 
         const feelingId = feelingResult[0].feeling_id;
 
