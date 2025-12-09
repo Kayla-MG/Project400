@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get("window");
 
-const TILE_WIDTH = width / 3 - 20; 
+const TILE_WIDTH = width / 2 - 30; 
 const GRID_PADDING = 15;
 
 // === API Configuration ===
