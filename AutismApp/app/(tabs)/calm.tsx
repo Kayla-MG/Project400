@@ -305,10 +305,10 @@ const CalmDownPage = () => {
 
   const tools: Tool[] = [
     { name: 'Visual Calming', icon: 'eye-outline', color: '#56CCF2', actionType: 'visual' }, 
-    { name: 'Stretch / Move', icon: 'walk-outline', color: '#F2C94C', actionType: 'stretch' },
+    { name: 'Stretch / Move', icon: 'walk-outline', color: '#fceb2aff', actionType: 'stretch' },
     { name: 'Listen To Music', icon: 'musical-notes-outline', color: '#8A2BE2', actionType: 'link' }, 
-    { name: 'Fidget / Squeeze', icon: 'hand-left-outline', color: '#F2994A', actionType: 'fidget' }, 
-    { name: 'Countdown / Timer', icon: 'time-outline', color: '#2D9CDB', actionType: 'timer' },
+    { name: 'Fidget / Squeeze', icon: 'hand-left-outline', color: '#f9a10aff', actionType: 'fidget' }, 
+    { name: 'Countdown / Timer', icon: 'time-outline', color: '#db2dcdff', actionType: 'timer' },
   ];
 
   const handleToolPress = (tool: Tool) => {
