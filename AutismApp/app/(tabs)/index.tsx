@@ -53,8 +53,8 @@ const Page = (props: Props) => {
   
   // Custom message based on the plan
   const scheduleMessage = currentPlan.activity === "No Planned Activity" 
-    ? `Today is a rest day! You have **${currentPlan.activity}** at **${currentPlan.location}**.`
-    : `DON'T FORGET: You have **${currentPlan.activity}** from **${currentPlan.time}** at **${currentPlan.location}**.`;
+    ? `Today is a rest day! You have ${currentPlan.activity} at ${currentPlan.location}.`
+    : `You have ${currentPlan.activity} from ${currentPlan.time} at ${currentPlan.location}.`;
 
   return (
     <View style={styles.container}>
