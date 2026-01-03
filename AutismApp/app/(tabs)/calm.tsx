@@ -20,7 +20,7 @@ const PRIMARY_COLOR = '#4C8A8C'; // Calming Teal/Green
 const ACCENT_COLOR = '#FFC107'; // Yellow accent
 const BACKGROUND_COLOR = '#F5F5F5';
 const TILE_WIDTH = width / 2 - 20;
-const MARCONI_UNION_LINK = 'https://www.youtube.com/watch?v=UqQh-d1-678';
+const MARCONI_UNION_LINK = 'https://youtu.be/qYnA9wWFHLI?si=6jrCVbojyGa0qxVK';
 
 
 // --- Component: Visual Calming Tool (Tool 2) ---
@@ -87,7 +87,6 @@ const StretchMoveGuide = ({ onStop }: { onStop: () => void }) => {
                 <Ionicons name="body-outline" size={36} color={PRIMARY_COLOR} />
                 <Text style={stretchStyles.cardTitle}>Option 2: Simple Stretches</Text>
                 <Text style={stretchStyles.cardContent}>
-                    Try slow, deliberate movements:
                     1. Raise both arms high and stretch your back.
                     2. Slowly turn your head side-to-side (5 times).
                     3. Gently roll your shoulders back (5 times).

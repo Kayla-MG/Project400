@@ -29,7 +29,7 @@ const MOOD_DATA = [
 
 // Data for the separate, single Meltdown button
 const MELTDOWN_DATA = { 
-    name: "Meltdown", 
+    name: "Crisis", //changed to crisis instead of meltdown
     icon: "thunderstorm-outline", 
     color: Colors.red, 
     value: 1, 
