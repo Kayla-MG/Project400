@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Linking, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
     useSharedValue,
@@ -8,6 +8,8 @@ import Animated, {
     useAnimatedProps,
 } from 'react-native-reanimated';
 import { withTiming } from 'react-native-reanimated'
+// Add this line after your other imports:
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Since we are using Animated styles on the Circle/SVG, we need to register the component
 // This is necessary for Reanimated to work correctly on non-native components like View/Circle

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router'; 
 import { Colors } from '@/constants/Colors'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
+//import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get("window");
 
