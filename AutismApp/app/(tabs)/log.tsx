@@ -21,7 +21,7 @@ const MOOD_DATA = [
   { name: "Happy", icon: "happy-outline", color: Colors.green, value: 5, isCrisis: false },
   { name: "Calm", icon: "leaf-outline", color: Colors.blue, value: 4, isCrisis: false },
   { name: "Neutral", icon: "remove-circle-outline", color: Colors.neutral, value: 3, isCrisis: false },
-  { name: "Tired", icon: "moon-outline", color: Colors.purple, value: 2, isCrisis: false },
+  { name: "Tired", icon: "moon-outline", color: Colors.purple, value: 2, isCrisis: true },
   { name: "Anxious", icon: "help-circle-outline", color: Colors.peach, value: 2, isCrisis: true },
   { name: "Sad", icon: "sad-outline", color: Colors.blue, value: 2, isCrisis: true },
   { name: "Angry", icon: "flame-outline", color: Colors.red, value: 1, isCrisis: true },
@@ -49,7 +49,7 @@ const Page = () => {
     setIsLogging(true);
     
     // FIX: Convert isCrisis boolean to 1 (true) or 0 (false) for MySQL BIT/BOOLEAN column
-    const isMeltdownForDb = (mood.isCrisis || mood.name === "Meltdown") ? 1 : 0;
+    const isMeltdownForDb = (mood.isCrisis || mood.name === "Crisis") ? 1 : 0;
     
     const logDetails = {
         userId: USER_ID_PLACEHOLDER, 
