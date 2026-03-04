@@ -1,14 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const mysql = require('mysql2/promise'); // Using async/await version
+const mysql = require('mysql2/promise');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-dotenv.config(); // Load environment variables from .env file
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// --- Database Connection Pool ---
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -19,12 +20,58 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-// Middleware
-app.use(cors()); // Allow requests from your React Native app
-app.use(express.json()); // Enable parsing JSON request bodies
+app.use(cors());
+app.use(express.json());
 
-// --- Endpoint: Log a New Mood Entry ---
-// React Native app POSTs to this endpoint when the user hits "Save Log"
+// --- AUTHENTICATION ENDPOINTS ---
+
+// Register Route
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body; // username is now an email
+
+    // Backend Email Validation
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(username)) {
+        return res.status(400).json({ error: "Invalid email format." });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const [result] = await pool.query(
+            'INSERT INTO users (username, password) VALUES (?, ?)', 
+            [username, hashedPassword]
+        );
+        res.status(201).json({ message: "User created", userId: result.insertId });
+    } catch (err) {
+        // MySQL will throw an error if the email already exists in a UNIQUE column
+        res.status(500).json({ error: "This email is already registered." });
+    }
+});
+
+// Login Route
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const [users] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+        
+        if (users.length === 0) return res.status(401).json({ error: "Invalid credentials" });
+
+        const validPassword = await bcrypt.compare(password, users[0].password);
+        if (!validPassword) return res.status(401).json({ error: "Invalid credentials" });
+
+        const token = jwt.sign(
+            { userId: users[0].id }, 
+            process.env.JWT_SECRET || 'your_secret_key', 
+            { expiresIn: '7d' }
+        );
+
+        res.json({ token, username: users[0].username, userId: users[0].id });
+    } catch (err) {
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// --- MOOD LOGGING ENDPOINT (Updated with dynamic userId) ---
 app.post('/api/log/mood', async (req, res) => {
     const { userId, feelingName, severity, isMeltdown, diaryNotes } = req.body;
 
@@ -33,27 +80,17 @@ app.post('/api/log/mood', async (req, res) => {
     }
 
     try {
-        // --- Step 1: Ensure User Exists (Simulated Auth Check) ---
-        // In a real system, you would check auth tokens, but here we ensure the user ID is in the DB.
-        // We use a temporary query to insert the user if they don't exist yet.
-        await pool.query(
-            `INSERT IGNORE INTO users (user_id, username) VALUES (?, 'User_' + ?)`,
-            [userId, userId.substring(0, 8)]
+        const [feelingResult] = await pool.query(
+            'SELECT feeling_id FROM feelings WHERE name = ?',
+            [feelingName]
         );
 
-     // server.js (Step 2)
-    const [feelingResult] = await pool.query(
-    'SELECT feeling_id FROM feelings WHERE name = ?',
-    [feelingName] // <--- Here, feelingName = 'Angry'
-);
-
-    if (feelingResult.length === 0) {
-    return res.status(404).json({ error: `Invalid feeling name: ${feelingName}.` });
-}
+        if (feelingResult.length === 0) {
+            return res.status(404).json({ error: `Invalid feeling name: ${feelingName}.` });
+        }
 
         const feelingId = feelingResult[0].feeling_id;
 
-        // --- Step 3: Insert the new log entry ---
         const [result] = await pool.query(
             `INSERT INTO log_entry (user_id, feeling_id, severity_level, is_meltdown, diary_notes)
              VALUES (?, ?, ?, ?, ?)`,
@@ -61,15 +98,12 @@ app.post('/api/log/mood', async (req, res) => {
         );
 
         res.status(201).json({ message: 'Mood logged successfully', logId: result.insertId });
-
     } catch (err) {
-        console.error('Database Error during logging:', err);
-        res.status(500).json({ error: 'Internal server error during data insertion.' });
+        console.error('Database Error:', err);
+        res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
-// Start the server
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
-    console.log(`API is ready to handle requests...`);
 });
