@@ -36,8 +36,6 @@ const MELTDOWN_DATA = {
     value: 1, 
     isCrisis: true 
 };
-
-
 const Page = () => {
   const router = useRouter(); 
   const { top: safeTop } = useSafeAreaInsets();
