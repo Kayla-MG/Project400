@@ -19,29 +19,25 @@ const Page = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false); // New toggle state
+  const [isRegistering, setIsRegistering] = useState(false);
 
- 
-    const handleAuth = async () => {
-  // 1. Basic check
-  if (!username || !password) {
-    Alert.alert("Error", "Please fill in all fields");
-    return;
-  }
+  const handleAuth = async () => {
+    if (!username || !password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
 
-  // 2. Email Validation (Regex)
-  const emailRegex = /\S+@\S+\.\S+/;
-  if (!emailRegex.test(username)) {
-    Alert.alert("Invalid Email", "Please enter a valid email address (e.g. name@email.com)");
-    return;
-  }
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(username)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address (e.g. name@email.com)");
+      return;
+    }
 
-  setLoading(true);
-    // Choose the right endpoint based on the toggle
+    setLoading(true);
     const endpoint = isRegistering ? '/api/register' : '/api/login';
     
     try {
-      // USE YOUR IP HERE: 192.168.1.45
+      // Ensure this matches your laptop's current IPv4 address
       const response = await fetch(`http://192.168.1.45:3000${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,7 +49,7 @@ const Page = () => {
       if (response.ok) {
         if (isRegistering) {
           Alert.alert("Success", "Account created! Now please login.");
-          setIsRegistering(false); // Switch back to login mode
+          setIsRegistering(false);
         } else {
           await AsyncStorage.setItem('userToken', data.token);
           await AsyncStorage.setItem('userName', data.username);
@@ -83,16 +79,27 @@ const Page = () => {
           </Animated.Text>
 
           <View style={styles.form}>
+            {/* PRIVACY TIP: Only shows when Registering */}
+            {isRegistering && (
+              <Animated.View entering={FadeInDown.delay(200)} style={styles.privacyPrompt}>
+                <Text style={styles.privacyText}>
+                  🔒 Privacy Tip: To stay anonymous, use an email address that doesn't 
+                  contain your real name or date of birth.
+                </Text>
+              </Animated.View>
+            )}
+
             <TextInput 
-            placeholder="Email Address" // Changed from Username
-            placeholderTextColor="#ddd"
-            style={styles.input}
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            keyboardType="email-address" // Shows the '@' symbol on the mobile keyboard
-            autoCorrect={false}
-/>
+              placeholder="Email Address" 
+              placeholderTextColor="#ddd"
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoCorrect={false}
+            />
+            
             <TextInput 
               placeholder="Password" 
               placeholderTextColor="#ddd"
@@ -109,7 +116,6 @@ const Page = () => {
             </Text>}
           </TouchableOpacity>
 
-          {/* Toggle Button */}
           <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)} style={{marginTop: 20}}>
             <Text style={styles.toggleText}>
               {isRegistering ? "Already have an account? Login" : "First time? Create an account"}
@@ -132,5 +138,20 @@ const styles = StyleSheet.create({
   input: { backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 10, padding: 15, color: '#fff', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.3)' },
   btn: { backgroundColor: Colors.orange, paddingVertical: 15, borderRadius: 10, alignItems: 'center' },
   btnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
-  toggleText: { color: Colors.white, textAlign: 'center', fontSize: 14, textDecorationLine: 'underline' }
+  toggleText: { color: Colors.white, textAlign: 'center', fontSize: 14, textDecorationLine: 'underline' },
+  // New Styles for Privacy Tip
+  privacyPrompt: {
+    backgroundColor: 'rgba(255, 165, 0, 0.2)', 
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 5,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.orange,
+  },
+  privacyText: {
+    color: '#fff',
+    fontSize: 13,
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
 });
