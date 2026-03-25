@@ -25,11 +25,10 @@ app.use(express.json());
 
 // --- AUTHENTICATION ENDPOINTS ---
 
-// Register Route
+// Updated Register Route in server.js
 app.post('/api/register', async (req, res) => {
-    const { username, password } = req.body; // username is now an email
+    const { username, password } = req.body;
 
-    // Backend Email Validation
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(username)) {
         return res.status(400).json({ error: "Invalid email format." });
@@ -43,8 +42,15 @@ app.post('/api/register', async (req, res) => {
         );
         res.status(201).json({ message: "User created", userId: result.insertId });
     } catch (err) {
-        // MySQL will throw an error if the email already exists in a UNIQUE column
-        res.status(500).json({ error: "This email is already registered." });
+        console.error("REGISTRATION ERROR:", err); // THIS WILL SHOW THE REAL ERROR IN YOUR TERMINAL
+
+        // Check if the error is actually a duplicate email
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ error: "This email is already registered." });
+        }
+
+        // If it's something else, tell us what it actually is
+        res.status(500).json({ error: "Database error: " + err.message });
     }
 });
 
@@ -65,7 +71,11 @@ app.post('/api/login', async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        res.json({ token, username: users[0].username, userId: users[0].id });
+        res.json({ 
+            token, 
+            username: users[0].username, 
+            userId: users[0].id 
+        });
     } catch (err) {
         res.status(500).json({ error: "Internal server error" });
     }

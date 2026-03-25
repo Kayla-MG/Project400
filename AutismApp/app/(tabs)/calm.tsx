@@ -1,32 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    Easing,
-    useAnimatedProps,
-} from 'react-native-reanimated';
-import { withTiming } from 'react-native-reanimated'
-// Add this line after your other imports:
+import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Since we are using Animated styles on the Circle/SVG, we need to register the component
-// This is necessary for Reanimated to work correctly on non-native components like View/Circle
-const AnimatedCircle = Animated.createAnimatedComponent(View);
+import { useSensoryTheme } from '@/constants/useSensoryTheme'; // Ensure this path is correct
 
 const { width } = Dimensions.get("window");
 
 // --- Design Constants ---
-const PRIMARY_COLOR = '#4C8A8C'; // Calming Teal/Green
-const ACCENT_COLOR = '#FFC107'; // Yellow accent
-const BACKGROUND_COLOR = '#F5F5F5';
+const PRIMARY_COLOR = '#4C8A8C'; 
+const ACCENT_COLOR = '#FFC107'; 
 const TILE_WIDTH = width / 2 - 20;
 const MARCONI_UNION_LINK = 'https://youtu.be/qYnA9wWFHLI?si=6jrCVbojyGa0qxVK';
 
-
-// --- Component: Visual Calming Tool (Tool 2) ---
+// --- Component: Visual Calming Tool ---
 const VisualCalmGuide = ({ onStop }: { onStop: () => void }) => {
+    const theme = useSensoryTheme();
     const calmingVideos = [
         { name: 'Northern Lights', icon: 'sparkles-outline', url: 'https://www.youtube.com/watch?v=I8XAzVNSA84', color: '#56CCF2' },
         { name: 'Ocean Waves', icon: 'water-outline', url: 'https://www.youtube.com/watch?v=r_VQpsG7EIY', color: '#2D9CDB' },
@@ -35,19 +24,15 @@ const VisualCalmGuide = ({ onStop }: { onStop: () => void }) => {
 
     const handleLinkPress = async (url: string) => {
         const supported = await Linking.canOpenURL(url);
-        if (supported) {
-            await Linking.openURL(url);
-        } else {
-            Alert.alert('Link Error', 'Cannot open link. Ensure YouTube is available.', [{ text: 'OK' }]);
-        }
+        if (supported) { await Linking.openURL(url); } 
+        else { Alert.alert('Link Error', 'Cannot open link.'); }
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            {/* Added ScrollView here in case the content overflows on a small screen */}
-            <ScrollView contentContainerStyle={visualStyles.container}>
-                <Text style={visualStyles.header}>Visual Calming Focus</Text>
-                <Text style={visualStyles.subtitle}>Focus on predictable, low-stimulus motion to regain control.</Text>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+            <ScrollView contentContainerStyle={[visualStyles.container, { backgroundColor: theme.background }]}>
+                <Text style={[visualStyles.header, { color: theme.isSoftMode ? '#555' : PRIMARY_COLOR }]}>Visual Calming Focus</Text>
+                <Text style={[visualStyles.subtitle, { color: theme.text }]}>Focus on predictable, low-stimulus motion.</Text>
                 
                 <View style={visualStyles.grid}>
                     {calmingVideos.map(video => (
@@ -58,7 +43,6 @@ const VisualCalmGuide = ({ onStop }: { onStop: () => void }) => {
                         >
                             <Ionicons name={video.icon as any} size={40} color="white" />
                             <Text style={visualStyles.videoButtonText}>{video.name}</Text>
-                            <Text style={visualStyles.videoButtonSubtext}>(Opens YouTube)</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -70,33 +54,26 @@ const VisualCalmGuide = ({ onStop }: { onStop: () => void }) => {
         </SafeAreaView>
     );
 };
-// --- END VisualCalmGuide Component ---
 
-
-// --- Component: Stretch/Move Guide (Tool 3) ---
+// --- Component: Stretch/Move Guide ---
 const StretchMoveGuide = ({ onStop }: { onStop: () => void }) => {
+    const theme = useSensoryTheme();
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ScrollView contentContainerStyle={stretchStyles.container}>
-                <Text style={stretchStyles.header}>Move to Regulate</Text>
-                <Text style={stretchStyles.subtitle}>Movement helps shift focus and release tension.</Text>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+            <ScrollView contentContainerStyle={[stretchStyles.container, { backgroundColor: theme.background }]}>
+                <Text style={[stretchStyles.header, { color: theme.isSoftMode ? '#555' : PRIMARY_COLOR }]}>Move to Regulate</Text>
+                <Text style={[stretchStyles.subtitle, { color: theme.text }]}>Movement helps shift focus and release tension.</Text>
 
-                <View style={stretchStyles.card}>
+                <View style={[stretchStyles.card, { backgroundColor: theme.card }]}>
                     <Ionicons name="walk-outline" size={36} color={PRIMARY_COLOR} />
-                    <Text style={stretchStyles.cardTitle}>Option 1: Go for a Short Walk</Text>
-                    <Text style={stretchStyles.cardContent}>
-                        Step away from the current environment. Take 5 minutes to walk slowly in a quiet area. Focus on the feeling of your feet hitting the ground.
-                    </Text>
+                    <Text style={[stretchStyles.cardTitle, { color: theme.isSoftMode ? '#555' : PRIMARY_COLOR }]}>Option 1: Short Walk</Text>
+                    <Text style={[stretchStyles.cardContent, { color: theme.text }]}>Step away from the current environment. Take 5 minutes to walk slowly.</Text>
                 </View>
 
-                <View style={stretchStyles.card}>
+                <View style={[stretchStyles.card, { backgroundColor: theme.card }]}>
                     <Ionicons name="body-outline" size={36} color={PRIMARY_COLOR} />
-                    <Text style={stretchStyles.cardTitle}>Option 2: Simple Stretches</Text>
-                    <Text style={stretchStyles.cardContent}>
-                        1. Raise both arms high and stretch your back.
-                        2. Slowly turn your head side-to-side (5 times).
-                        3. Gently roll your shoulders back (5 times).
-                    </Text>
+                    <Text style={[stretchStyles.cardTitle, { color: theme.isSoftMode ? '#555' : PRIMARY_COLOR }]}>Option 2: Simple Stretches</Text>
+                    <Text style={[stretchStyles.cardContent, { color: theme.text }]}>1. Raise arms high. 2. Turn head side-to-side. 3. Roll shoulders.</Text>
                 </View>
                 
                 <TouchableOpacity onPress={onStop} style={styles.closeButton}>
@@ -106,67 +83,20 @@ const StretchMoveGuide = ({ onStop }: { onStop: () => void }) => {
         </SafeAreaView>
     );
 };
-// --- END StretchMoveGuide Component ---
 
-
-// --- Component: External Link Display (Tool 4: Listen to Music) ---
-const ExternalMusicLink = ({ onClose }: { onClose: () => void }) => {
-    const handleLinkPress = async (url: string) => {
-        const supported = await Linking.canOpenURL(url);
-        
-        if (supported) {
-            await Linking.openURL(url);
-        } else {
-            Alert.alert('App Not Found', 'Cannot open the link. Please ensure the YouTube app or a browser is available.', [{ text: 'OK' }]);
-        }
-    };
-
-    return (
-        <View style={styles.linkContainer}>
-            <Text style={styles.linkTitle}>Marconi Union - Weightless</Text>
-            <Text style={styles.linkSubtitle}>Tap below to play on YouTube (Opens externally):</Text>
-            
-            <View style={styles.buttonGroup}>
-                <TouchableOpacity 
-                    style={styles.linkButton} 
-                    onPress={() => handleLinkPress(MARCONI_UNION_LINK)}
-                >
-                    <Ionicons name="logo-youtube" size={24} color="white" />
-                    <Text style={styles.linkButtonText}>Launch YouTube</Text>
-                </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>Close Options</Text>
-            </TouchableOpacity>
-        </View>
-    );
-};
-// --- END ExternalMusicLink Component ---
-
-
-// --- Component: Fidget / Squeeze Guide (Tool 5) ---
+// --- Component: Fidget / Squeeze Guide ---
 const FidgetSqueezeGuide = ({ onStop }: { onStop: () => void }) => {
+    const theme = useSensoryTheme();
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ScrollView contentContainerStyle={fidgetStyles.container}>
-                <Text style={fidgetStyles.header}>Fidget & Squeeze</Text>
-                <Text style={fidgetStyles.subtitle}>Tactile input helps ground you and redirect energy.</Text>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+            <ScrollView contentContainerStyle={[fidgetStyles.container, { backgroundColor: theme.background }]}>
+                <Text style={[fidgetStyles.header, { color: theme.isSoftMode ? '#555' : PRIMARY_COLOR }]}>Fidget & Squeeze</Text>
+                <Text style={[fidgetStyles.subtitle, { color: theme.text }]}>Tactile input helps ground you.</Text>
                 
-                <View style={fidgetStyles.card}>
+                <View style={[fidgetStyles.card, { backgroundColor: theme.card }]}>
                     <Ionicons name="bulb-outline" size={30} color={PRIMARY_COLOR} />
-                    <Text style={fidgetStyles.cardTitle}>Find Your Tool</Text>
-                    <Text style={fidgetStyles.cardContent}>
-                        Engage with a favorite sensory object (stress ball, soft fabric, fidget spinner, or tangle toy). If you have a weighted blanket or vest, using it now may help.
-                    </Text>
-                </View>
-                
-                <View style={fidgetStyles.card}>
-                    <Ionicons name="swap-horizontal-outline" size={30} color={PRIMARY_COLOR} />
-                    <Text style={fidgetStyles.cardTitle}>The Squeeze & Release</Text>
-                    <Text style={fidgetStyles.cardContent}>
-                        Squeeze your hands/fists tightly for 5 seconds, focusing on the tension. Then, release completely. Repeat 3 times to release physical tension.
-                    </Text>
+                    <Text style={[fidgetStyles.cardTitle, { color: theme.isSoftMode ? '#555' : PRIMARY_COLOR }]}>Find Your Tool</Text>
+                    <Text style={[fidgetStyles.cardContent, { color: theme.text }]}>Engage with a favorite sensory object (stress ball, fabric, tangle toy).</Text>
                 </View>
                 
                 <TouchableOpacity onPress={onStop} style={styles.closeButton}>
@@ -176,11 +106,10 @@ const FidgetSqueezeGuide = ({ onStop }: { onStop: () => void }) => {
         </SafeAreaView>
     );
 };
-// --- END FidgetSqueezeGuide Component ---
 
-
-// --- Component: Countdown Timer Tool (Tool 6) ---
+// --- Component: Countdown Timer Tool ---
 const CountdownTimer = ({ onStop }: { onStop: () => void }) => {
+    const theme = useSensoryTheme();
     const INITIAL_COUNTDOWN_SECONDS = 10;
     const [timeLeft, setTimeLeft] = useState(INITIAL_COUNTDOWN_SECONDS);
     const [isRunning, setIsRunning] = useState(false);
@@ -189,211 +118,89 @@ const CountdownTimer = ({ onStop }: { onStop: () => void }) => {
 
     useEffect(() => {
         if (isRunning) {
-            if (intervalRef.current !== null) {
-                clearInterval(intervalRef.current);
-            }
-            
             intervalRef.current = setInterval(() => {
-                setTimeLeft(prevTime => {
-                    if (prevTime === 1) {
-                        clearInterval(intervalRef.current!);
-                        if (isRepeating) {
-                            setTimeLeft(INITIAL_COUNTDOWN_SECONDS);
-                            return INITIAL_COUNTDOWN_SECONDS;
-                        } else {
-                            setIsRunning(false);
-                            setTimeout(() => {
-                                Alert.alert('Timer Done', '10 seconds complete! Tap "Back to Tools" when ready.');
-                            }, 100);
-                            return 0;
-                        }
+                setTimeLeft(prev => {
+                    if (prev === 1) {
+                        if (!isRepeating) setIsRunning(false);
+                        return isRepeating ? INITIAL_COUNTDOWN_SECONDS : 0;
                     }
-                    return prevTime - 1;
+                    return prev - 1;
                 });
             }, 1000) as unknown as number; 
-        } else if (intervalRef.current !== null) {
+        } else if (intervalRef.current) {
             clearInterval(intervalRef.current);
-            intervalRef.current = null;
         }
-
-        return () => {
-            if (intervalRef.current !== null) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-            }
-        };
+        return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
     }, [isRunning, isRepeating]);
 
-    const toggleRun = () => {
-        if (timeLeft === 0) {
-            setTimeLeft(INITIAL_COUNTDOWN_SECONDS);
-            setIsRunning(true);
-        } else {
-            setIsRunning(!isRunning);
-        }
-    };
-
-    const resetTimer = () => {
-        if (intervalRef.current !== null) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-        }
-        setIsRunning(false);
-        setIsRepeating(false);
-        setTimeLeft(INITIAL_COUNTDOWN_SECONDS);
-    };
-
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={timerStyles.container}>
-                <Text style={timerStyles.header}>
-                    - Focus Countdown -
-                </Text>
-                {/* Cleaned up the header text for better wrapping and readability */}
-                <Text style={timerStyles.subtitle}>
-                    Take a deep breath to the timer if you need
-                </Text> 
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+            <View style={[timerStyles.container, { backgroundColor: theme.background }]}>
+                <Text style={[timerStyles.header, { color: theme.isSoftMode ? '#555' : PRIMARY_COLOR }]}>- Focus Countdown -</Text>
+                <Text style={[timerStyles.subtitle, { color: theme.text }]}>Take a deep breath to the timer</Text> 
                 
-                {/* Large Visual Timer Display */}
-                <View style={[timerStyles.timerDisplay, { borderColor: isRunning ? PRIMARY_COLOR : '#ccc' }]}>
-                    <Text style={timerStyles.timerText}>{timeLeft}</Text>
+                <View style={[timerStyles.timerDisplay, { borderColor: isRunning ? PRIMARY_COLOR : '#ccc', backgroundColor: theme.card }]}>
+                    <Text style={[timerStyles.timerText, { color: theme.isSoftMode ? '#555' : PRIMARY_COLOR }]}>{timeLeft}</Text>
                 </View>
 
-                {/* Controls */}
                 <View style={timerStyles.controlsContainer}>
-                    <TouchableOpacity 
-                        style={timerStyles.controlButton} 
-                        onPress={toggleRun}
-                        disabled={timeLeft === 0 && !isRepeating}
-                    >
-                        <Ionicons name={isRunning ? "pause-outline" : "play-outline"} size={30} color="#FFF" />
+                    <TouchableOpacity style={timerStyles.controlButton} onPress={() => setIsRunning(!isRunning)}>
                         <Text style={timerStyles.controlButtonText}>{isRunning ? 'Pause' : 'Start'}</Text>
                     </TouchableOpacity>
-
-                    <TouchableOpacity 
-                        style={timerStyles.controlButton} 
-                        onPress={resetTimer}
-                    >
-                        <Ionicons name="refresh-outline" size={30} color="#FFF" />
+                    <TouchableOpacity style={timerStyles.controlButton} onPress={() => {setIsRunning(false); setTimeLeft(INITIAL_COUNTDOWN_SECONDS);}}>
                         <Text style={timerStyles.controlButtonText}>Reset</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Repeat Toggle */}
-                <View style={timerStyles.repeatToggle}>
-                    <Text style={timerStyles.repeatLabel}>Repeat Automatically?</Text>
-                    <TouchableOpacity onPress={() => setIsRepeating(!isRepeating)}>
-                        <Ionicons 
-                            name={isRepeating ? "checkbox-outline" : "square-outline"} 
-                            size={24} 
-                            color={isRepeating ? PRIMARY_COLOR : '#999'} 
-                        />
-                    </TouchableOpacity>
-                </View>
-
-                {/* Back Button */}
                 <TouchableOpacity onPress={onStop} style={timerStyles.backButton}>
-                    <Text style={timerStyles.backButtonText}>← Back to Tools</Text>
+                    <Text style={[timerStyles.backButtonText, { color: theme.text }]}>← Back to Tools</Text>
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
 };
-// --- END CountdownTimer Component ---
-
 
 // --- Main Calm Down Page ---
 interface Tool { 
-    name: string;
-    icon: string;
-    color: string;
-    actionType: 'internal' | 'link' | 'timer'| 'stretch' | 'visual' | 'fidget';
+    name: string; icon: string; color: string; 
+    actionType: 'link' | 'timer'| 'stretch' | 'visual' | 'fidget';
 }
 
 const CalmDownPage = () => {
-    const [showExternalMusicLink, setShowExternalMusicLink] = useState(false);
-    const [showTimer, setShowTimer] = useState(false);
-    const [showStretchMove, setShowStretchMove] = useState(false);
-    const [showVisualCalm, setShowVisualCalm] = useState(false); 
-    const [showFidget, setShowFidget] = useState(false); 
+    const theme = useSensoryTheme();
+    const [activeTool, setActiveTool] = useState<string | null>(null);
 
     const tools: Tool[] = [
         { name: 'Visual Calming', icon: 'eye-outline', color: '#56CCF2', actionType: 'visual' }, 
-        { name: 'Stretch / Move', icon: 'walk-outline', color: '#fceb2aff', actionType: 'stretch' },
+        { name: 'Stretch / Move', icon: 'walk-outline', color: '#FFC107', actionType: 'stretch' },
         { name: 'Listen To Music', icon: 'musical-notes-outline', color: '#8A2BE2', actionType: 'link' }, 
-        { name: 'Fidget / Squeeze', icon: 'hand-left-outline', color: '#f9a10aff', actionType: 'fidget' }, 
-        { name: 'Countdown / Timer', icon: 'time-outline', color: '#db2dcdff', actionType: 'timer' },
+        { name: 'Fidget / Squeeze', icon: 'hand-left-outline', color: '#F9A10A', actionType: 'fidget' }, 
+        { name: 'Countdown / Timer', icon: 'time-outline', color: '#DB2DCD', actionType: 'timer' },
     ];
 
-    const handleToolPress = (tool: Tool) => {
-        // Reset all views before opening the selected one
-        setShowExternalMusicLink(false);
-        setShowTimer(false);
-        setShowStretchMove(false);
-        setShowVisualCalm(false);
-        setShowFidget(false);
-
-        if (tool.actionType === 'link') {
-            setShowExternalMusicLink(true);
-        } else if (tool.actionType === 'timer') {
-            setShowTimer(true);
-        } else if (tool.actionType === 'stretch') { 
-            setShowStretchMove(true);
-        } else if (tool.actionType === 'visual') { 
-            setShowVisualCalm(true); 
-        } else if (tool.actionType === 'fidget') { 
-            setShowFidget(true); 
-        } else {
-            console.log(`Launching internal tool: ${tool.name}`);
-            Alert.alert('Tool Selected', `Launching internal ${tool.name} tool.`, [{ text: 'OK' }]);
-        }
-    };
-    
-    // CONDITIONAL RENDERING CHAIN (Only one component renders at a time)
-    // These components are now wrapped in SafeAreaView internally
-    if (showTimer) {
-        return <CountdownTimer onStop={() => setShowTimer(false)} />;
-    }
-    if (showStretchMove) {
-        return <StretchMoveGuide onStop={() => setShowStretchMove(false)} />;
-    }
-    if (showVisualCalm) {
-        return <VisualCalmGuide onStop={() => setShowVisualCalm(false)} />;
-    }
-    if (showFidget) {
-        return <FidgetSqueezeGuide onStop={() => setShowFidget(false)} />;
-    }
-
+    if (activeTool === 'timer') return <CountdownTimer onStop={() => setActiveTool(null)} />;
+    if (activeTool === 'stretch') return <StretchMoveGuide onStop={() => setActiveTool(null)} />;
+    if (activeTool === 'visual') return <VisualCalmGuide onStop={() => setActiveTool(null)} />;
+    if (activeTool === 'fidget') return <FidgetSqueezeGuide onStop={() => setActiveTool(null)} />;
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* This is your main title, now correctly positioned */}
-                <Text style={styles.title}>De-escalation Toolkit</Text>
-                <Text style={styles.subtitle}>Tap a strategy for immediate relief.</Text>
+                <Text style={[styles.title, { color: theme.isSoftMode ? '#555' : '#4A90E2' }]}>De-escalation Toolkit</Text>
+                <Text style={[styles.subtitle, { color: theme.text }]}>Tap a strategy for immediate relief.</Text>
 
-                {/* RENDER THE EXTERNAL LINK COMPONENT IF 'Listen To Music' WAS CLICKED */}
-                {showExternalMusicLink && (
-                    <ExternalMusicLink onClose={() => setShowExternalMusicLink(false)} />
-                )}
-                
-                {/* Tools Grid */}
                 <View style={styles.grid}>
                     {tools.map((t) => (
                         <TouchableOpacity
                             key={t.name}
-                            style={[styles.toolButton, { backgroundColor: t.color }]}
-                            onPress={() => handleToolPress(t)}
+                            style={[styles.toolButton, { backgroundColor: theme.isSoftMode ? theme.card : t.color, borderWidth: theme.isSoftMode ? 1 : 0, borderColor: '#DDD' }]}
+                            onPress={() => t.actionType === 'link' ? Linking.openURL(MARCONI_UNION_LINK) : setActiveTool(t.actionType)}
                         >
-                            <Ionicons name={t.icon as any} size={40} color="white" />
-                            <Text style={styles.toolLabel}>{t.name}</Text>
+                            <Ionicons name={t.icon as any} size={40} color={theme.isSoftMode ? t.color : "white"} />
+                            <Text style={[styles.toolLabel, { color: theme.isSoftMode ? '#444' : 'white' }]}>{t.name}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
-                
-                <Text style={styles.disclaimer}>
-                    *Music links open outside the app.
-                </Text>
             </ScrollView>
         </SafeAreaView>
     );
@@ -401,365 +208,55 @@ const CalmDownPage = () => {
 
 export default CalmDownPage;
 
-// --- Styling ---
-
+// --- Combined Styles ---
 const styles = StyleSheet.create({
-    // NEW style to ensure full-screen on all devices
-    safeArea: {
-        flex: 1,
-        backgroundColor: BACKGROUND_COLOR,
-    },
-    // The previous 'container' style, renamed to 'scrollContent' and removed paddingTop: 40
-    scrollContent: {
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        // Removed paddingTop: 40 as SafeAreaView handles it
-        paddingBottom: 80,
-        // Removed backgroundColor here as it is now on safeArea
-    },
-    title: {
-        // Added margin to the top of the title to give it a little space below the safe area
-        marginTop: 20, 
-        fontSize: 28,
-        fontWeight: '800',
-        marginBottom: 5,
-        color: PRIMARY_COLOR,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 25,
-        textAlign: 'center',
-    },
-    grid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-    toolButton: {
-        width: TILE_WIDTH,
-        height: TILE_WIDTH,
-        marginVertical: 8,
-        borderRadius: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 5,
-        elevation: 6,
-        padding: 10,
-    },
-    toolLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: 'white',
-        marginTop: 8,
-        textAlign: 'center',
-    },
-    disclaimer: {
-        fontSize: 12,
-        color: '#999',
-        marginTop: 30,
-    },
-    // --- Close Button Styling (Reused) ---
-    closeButton: {
-        marginTop: 40,
-        padding: 10,
-        backgroundColor: '#E0E0E0',
-        borderRadius: 8,
-        alignSelf: 'center',
-    },
-    closeButtonText: {
-        color: '#333',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    // --- MUSIC LINK STYLES (ExternalMusicLink) ---
-    linkContainer: {
-        width: '100%',
-        backgroundColor: '#FFF',
-        borderRadius: 15,
-        padding: 20,
-        marginBottom: 20,
-        borderWidth: 1,
-        borderColor: PRIMARY_COLOR,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 5,
-    },
-    linkTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: PRIMARY_COLOR,
-        marginBottom: 5,
-    },
-    linkSubtitle: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 15,
-    },
-    buttonGroup: {
-        flexDirection: 'row',
-        justifyContent: 'center', 
-        gap: 10,
-    },
-    linkButton: {
-        width: '80%', 
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 12,
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-        elevation: 3,
-        backgroundColor: '#FF0000', // YouTube Red
-    },
-    linkButtonText: {
-        color: 'white',
-        fontWeight: '600',
-        marginLeft: 8,
-        fontSize: 16,
-    },
+    safeArea: { flex: 1 },
+    scrollContent: { alignItems: 'center', paddingHorizontal: 15, paddingBottom: 80 },
+    title: { fontSize: 26, fontWeight: "800", marginBottom: 10, marginTop: 20, textAlign: 'center' },
+    subtitle: { fontSize: 16, marginBottom: 25, textAlign: 'center' },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' },
+    toolButton: { width: TILE_WIDTH, height: TILE_WIDTH, marginVertical: 8, borderRadius: 15, alignItems: 'center', justifyContent: 'center', elevation: 4, padding: 10 },
+    toolLabel: { fontSize: 14, fontWeight: '600', marginTop: 8, textAlign: 'center' },
+    closeButton: { marginTop: 40, padding: 15, backgroundColor: '#E0E0E0', borderRadius: 8, alignSelf: 'center' },
+    closeButtonText: { color: '#333', fontSize: 16, fontWeight: '600' },
 });
 
-// --- STYLES FOR COUNTDOWN TIMER ---
 const timerStyles = StyleSheet.create({
-    // Removed flex: 1 and width: '100%' from here since SafeAreaView provides flex: 1
-    container: {
-        flex: 1, // Keep flex: 1 for internal centering
-        width: '100%',
-        padding: 30,
-        alignItems: 'center',
-        backgroundColor: BACKGROUND_COLOR,
-    },
-    header: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: PRIMARY_COLOR,
-        // Reduced bottom margin here as we added a subtitle
-        marginBottom: 5, 
-    },
-    subtitle: { // NEW STYLE for the second line of text
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 30,
-        textAlign: 'center',
-    },
-    timerDisplay: {
-        width: 250,
-        height: 250,
-        borderRadius: 125,
-        borderWidth: 10,
-        backgroundColor: '#FFF',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 40,
-    },
-    timerText: {
-        fontSize: 100,
-        fontWeight: '200',
-        color: PRIMARY_COLOR,
-        zIndex: 2,
-    },
-    controlsContainer: {
-        flexDirection: 'row',
-        gap: 20,
-        marginBottom: 20,
-    },
-    controlButton: {
-        backgroundColor: PRIMARY_COLOR,
-        padding: 15,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 100,
-        height: 80,
-    },
-    controlButtonText: {
-        color: '#FFF',
-        fontSize: 14,
-        fontWeight: '600',
-        marginTop: 5,
-    },
-    repeatToggle: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 10,
-        backgroundColor: '#E6F0F0',
-        borderRadius: 8,
-    },
-    repeatLabel: {
-        fontSize: 16,
-        color: PRIMARY_COLOR,
-        marginRight: 10,
-    },
-    backButton: {
-        marginTop: 40,
-        padding: 10,
-    },
-    backButtonText: {
-        color: '#666',
-        fontSize: 16,
-        textDecorationLine: 'underline',
-    }
+    container: { flex: 1, width: '100%', padding: 30, alignItems: 'center' },
+    header: { fontSize: 24, fontWeight: '800', marginBottom: 5 },
+    subtitle: { fontSize: 16, marginBottom: 30, textAlign: 'center' },
+    timerDisplay: { width: 220, height: 220, borderRadius: 110, borderWidth: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 40 },
+    timerText: { fontSize: 80, fontWeight: '200' },
+    controlsContainer: { flexDirection: 'row', gap: 20, marginBottom: 20 },
+    controlButton: { backgroundColor: PRIMARY_COLOR, padding: 15, borderRadius: 10, width: 100, alignItems: 'center' },
+    controlButtonText: { color: '#FFF', fontWeight: '600' },
+    backButton: { marginTop: 40 },
+    backButtonText: { fontSize: 16, textDecorationLine: 'underline' }
 });
 
-// --- STYLES FOR STRETCH / MOVE GUIDE ---
 const stretchStyles = StyleSheet.create({
-    // Removed flex: 1 and width: '100%' from here since SafeAreaView provides flex: 1
-    container: {
-        padding: 30,
-        alignItems: 'center',
-        backgroundColor: BACKGROUND_COLOR,
-    },
-    header: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: PRIMARY_COLOR,
-        marginBottom: 10,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 30,
-        textAlign: 'center',
-    },
-    card: {
-        width: '100%',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 15,
-        padding: 20,
-        marginBottom: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 4,
-    },
-    cardTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: PRIMARY_COLOR,
-        marginTop: 10,
-        marginBottom: 5,
-    },
-    cardContent: {
-        fontSize: 15,
-        color: '#333',
-        lineHeight: 22,
-    },
-    backButton: {
-        marginTop: 40,
-        padding: 10,
-    },
-    backButtonText: {
-        color: '#666',
-        fontSize: 16,
-        textDecorationLine: 'underline',
-    }
+    container: { padding: 30, alignItems: 'center' },
+    header: { fontSize: 24, fontWeight: '800', marginBottom: 10 },
+    subtitle: { fontSize: 16, marginBottom: 30, textAlign: 'center' },
+    card: { width: '100%', borderRadius: 15, padding: 20, marginBottom: 20, elevation: 3 },
+    cardTitle: { fontSize: 18, fontWeight: '700', marginTop: 10, marginBottom: 5 },
+    cardContent: { fontSize: 15, lineHeight: 22 },
 });
 
-// --- STYLES FOR VISUAL CALM GUIDE ---
 const visualStyles = StyleSheet.create({
-    // Removed flex: 1 and width: '100%' from here since SafeAreaView provides flex: 1
-    container: {
-        padding: 30,
-        alignItems: 'center',
-        backgroundColor: BACKGROUND_COLOR,
-    },
-    header: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: PRIMARY_COLOR,
-        marginBottom: 10,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 30,
-        textAlign: 'center',
-    },
-    grid: {
-        flexDirection: 'column',
-        gap: 15,
-        width: '100%',
-    },
-    videoButton: {
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 15,
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-        elevation: 4,
-    },
-    videoButtonText: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: 'white',
-        marginLeft: 15,
-    },
-    videoButtonSubtext: {
-        fontSize: 10,
-        color: 'rgba(255, 255, 255, 0.8)',
-        marginLeft: 'auto',
-        alignSelf: 'flex-end',
-    }
+    container: { padding: 30, alignItems: 'center' },
+    header: { fontSize: 24, fontWeight: '800', marginBottom: 10 },
+    subtitle: { fontSize: 16, marginBottom: 30, textAlign: 'center' },
+    grid: { flexDirection: 'column', gap: 15, width: '100%' },
+    videoButton: { width: '100%', flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 10, elevation: 4 },
+    videoButtonText: { fontSize: 18, fontWeight: '700', color: 'white', marginLeft: 15 },
 });
 
-// --- STYLES FOR FIDGET GUIDE ---
 const fidgetStyles = StyleSheet.create({
-    // Removed flex: 1 and width: '100%' from here since SafeAreaView provides flex: 1
-    container: {
-        padding: 30,
-        alignItems: 'center',
-        backgroundColor: BACKGROUND_COLOR,
-    },
-    header: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: PRIMARY_COLOR,
-        marginBottom: 10,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 30,
-        textAlign: 'center',
-    },
-    card: {
-        width: '100%',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 15,
-        padding: 20,
-        marginBottom: 20,
-        borderLeftWidth: 4,
-        borderLeftColor: ACCENT_COLOR,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 4,
-    },
-    cardTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: PRIMARY_COLOR,
-        marginTop: 10,
-        marginBottom: 5,
-    },
-    cardContent: {
-        fontSize: 15,
-        color: '#333',
-        lineHeight: 22,
-    },
+    container: { padding: 30, alignItems: 'center' },
+    header: { fontSize: 24, fontWeight: '800', marginBottom: 10 },
+    subtitle: { fontSize: 16, marginBottom: 30, textAlign: 'center' },
+    card: { width: '100%', borderRadius: 15, padding: 20, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: ACCENT_COLOR, elevation: 3 },
+    cardTitle: { fontSize: 18, fontWeight: '700', marginTop: 10, marginBottom: 5 },
+    cardContent: { fontSize: 15, lineHeight: 22 },
 });

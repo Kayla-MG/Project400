@@ -1,22 +1,19 @@
 import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router'; 
+import { useRouter } from 'expo-router'; 
 import { Colors } from '@/constants/Colors'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
-//import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSensoryTheme } from '@/constants/useSensoryTheme'; // Called your custom hook
 
 const { width } = Dimensions.get("window");
-
 const TILE_WIDTH = width / 2 - 30; 
 const GRID_PADDING = 15;
 
 // === API Configuration ===
-// IMPORTANT: Use your confirmed local IP address 192.168.1.45
 const API_BASE_URL = 'http://192.168.1.45:3000'; 
-const USER_ID_PLACEHOLDER = "USER_00233714"; 
 
-// Data Definition (Fixed list of moods/icons)
 const MOOD_DATA = [
   { name: "Happy", icon: "happy-outline", color: Colors.green, value: 5, isCrisis: false },
   { name: "Calm", icon: "leaf-outline", color: Colors.blue, value: 4, isCrisis: false },
@@ -28,32 +25,46 @@ const MOOD_DATA = [
   { name: "Overwhelmed", icon: "alert-circle-outline", color: Colors.orange, value: 1, isCrisis: true },
 ];
 
-// Data for the separate, single Meltdown button
 const MELTDOWN_DATA = { 
-    name: "Crisis", //changed to crisis instead of meltdown
+    name: "Crisis", 
     icon: "thunderstorm-outline", 
     color: Colors.red, 
     value: 1, 
     isCrisis: true 
 };
+
 const Page = () => {
   const router = useRouter(); 
+  const theme = useSensoryTheme(); // CALL: Hook for Soft Mode
   const { top: safeTop } = useSafeAreaInsets();
+  
   const [selectedMood, setSelectedMood] = useState<typeof MOOD_DATA[0] | null>(null);
   const [isLogging, setIsLogging] = useState(false);
-  
-  
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Load actual User ID from login session
+  useEffect(() => {
+    const getUserId = async () => {
+      const id = await AsyncStorage.getItem('userId');
+      setCurrentUserId(id);
+    };
+    getUserId();
+  }, []);
+
   const sendLogToApi = async (mood: typeof MOOD_DATA[0] | typeof MELTDOWN_DATA, navigated: boolean) => {
+    if (!currentUserId) {
+        Alert.alert("Error", "User session not found. Please log in again.");
+        return;
+    }
+
     setIsLogging(true);
-    
-    // FIX: Convert isCrisis boolean to 1 (true) or 0 (false) for MySQL BIT/BOOLEAN column
     const isMeltdownForDb = (mood.isCrisis || mood.name === "Crisis") ? 1 : 0;
     
     const logDetails = {
-        userId: USER_ID_PLACEHOLDER, 
+        userId: currentUserId, // Using real ID from AsyncStorage
         feelingName: mood.name,
         severity: mood.value,
-        isMeltdown: isMeltdownForDb, // Sending 1 or 0
+        isMeltdown: isMeltdownForDb,
         diaryNotes: "",
     };
 
@@ -65,44 +76,30 @@ const Page = () => {
         });
 
         if (response.ok) {
-            console.log(`LOGGED MOOD: ${mood.name} to SQL DB.`);
             if (!navigated) {
-                 Alert.alert('Success!', `Mood logged: ${mood.name} to API`, [{ text: 'OK' }]);
+                 Alert.alert('Logged', `Successfully recorded your ${mood.name} feeling.`, [{ text: 'OK' }]);
             }
         } else {
-            // Handle HTTP errors
-            const errorData = await response.json();
-            const message = errorData.error || `Unknown API error (Status: ${response.status})`;
-            Alert.alert('Error Saving', `Could not save log: ${message}. Check API console for details.`, [{ text: 'OK' }]);
+            Alert.alert('Error', 'Server could not save this entry.');
         }
-
     } catch (error) {
-        console.error("API Fetch Error:", error);
-        Alert.alert('Network Error', 'Could not connect to the API server. Ensure it is running on the correct IP/Port.', [{ text: 'OK' }]);
+        Alert.alert('Network Error', 'Connection to server failed.');
     } finally {
         setIsLogging(false);
     }
   };
 
-
   const checkCrisisAndNavigate = (mood: typeof MOOD_DATA[0] | typeof MELTDOWN_DATA) => {
     if (mood.isCrisis) {
       Alert.alert(
-        "Immediate Support Needed?",
-        `You selected '${mood.name}'. Do you want to go to the CALM NOW toolkit for immediate relief?`,
+        "Immediate Support?",
+        `You feel '${mood.name}'. Need the Calm Now tools?`,
         [
-          { 
-            text: "Log Anyway", 
-            style: 'cancel',
-            onPress: () => sendLogToApi(mood, false) 
-          },
-          { 
-            text: "Yes, Calm Now", 
-            onPress: () => {
+          { text: "Just Log It", onPress: () => sendLogToApi(mood, false) },
+          { text: "Yes, Calm Now", onPress: () => {
               sendLogToApi(mood, true); 
               router.push('/calm');
-            },
-            style: 'destructive'
+            }, style: 'destructive'
           },
         ]
       );
@@ -111,26 +108,21 @@ const Page = () => {
     }
   };
 
-  const handleMoodTilePress = (mood: typeof MOOD_DATA[0]) => {
-      setSelectedMood(mood);
-      checkCrisisAndNavigate(mood);
-  };
-
-  const handleMeltdownPress = () => {
-    checkCrisisAndNavigate(MELTDOWN_DATA);
-  };
-
+  // --- Dynamic Styles for Soft Mode ---
+  const dynamicBg = theme.background;
+  const dynamicTitle = theme.isSoftMode ? '#555' : Colors.blue;
+  const dynamicText = theme.text;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: dynamicBg }]}>
       <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: safeTop + 20 }]}> 
-        <Text style={styles.title}>Daily Check-In Log</Text>
+        <Text style={[styles.title, { color: dynamicTitle }]}>Daily Check-In Log</Text>
 
-        {/* 1. MELTDOWN/CRISIS BUTTON (LARGE AND PROMINENT) */}
+        {/* 1. CRISIS BUTTON */}
         <View style={styles.crisisContainer}>
           <TouchableOpacity 
-            style={styles.meltdownButton}
-            onPress={handleMeltdownPress}
+            style={[styles.meltdownButton, theme.isSoftMode && { backgroundColor: '#D9534F', elevation: 0 }]}
+            onPress={() => checkCrisisAndNavigate(MELTDOWN_DATA)}
             disabled={isLogging}
           >
             {isLogging ? (
@@ -142,38 +134,30 @@ const Page = () => {
           </TouchableOpacity>
         </View>
 
-
-        {/* 2. Standard Mood Selection Grid */}
-        <Text style={styles.sectionHeader}>Log Other Feelings:</Text>
+        <Text style={[styles.sectionHeader, { color: dynamicText }]}>Log Other Feelings:</Text>
 
         <View style={styles.grid}>
           {MOOD_DATA.map((m) => {
             const isSelected = selectedMood?.name === m.name;
-            const isCrisisTile = m.isCrisis;
-            
-            const tileStyle = isCrisisTile 
-              ? styles.crisisTile 
-              : styles.tile;
-
-            const iconColor = isSelected ? Colors.white : m.color;
-            const labelColor = isSelected ? Colors.white : (isCrisisTile ? Colors.red : Colors.text); 
-            const tileBackground = isSelected ? m.color : Colors.cardBackground;
+            const tileBackground = isSelected ? m.color : theme.card;
+            const labelColor = isSelected ? Colors.white : (m.isCrisis ? Colors.red : dynamicText);
 
             return (
               <View key={m.name} style={{width: TILE_WIDTH, marginBottom: 10}}>
                 <TouchableOpacity 
                   style={[
-                    tileStyle,
+                    styles.tile,
                     { 
                       backgroundColor: tileBackground, 
-                      borderColor: m.color,
+                      borderColor: isSelected ? m.color : (theme.isSoftMode ? '#DDD' : '#EEE'),
                       borderWidth: isSelected ? 3 : 1,
+                      elevation: theme.isSoftMode ? 0 : 3
                     }
                   ]} 
-                  onPress={() => handleMoodTilePress(m)}
+                  onPress={() => { setSelectedMood(m); checkCrisisAndNavigate(m); }}
                   disabled={isLogging}
                 >
-                  <Ionicons name={m.icon as any} size={40} color={iconColor} />
+                  <Ionicons name={m.icon as any} size={40} color={isSelected ? Colors.white : m.color} />
                   <Text style={[styles.label, { color: labelColor }]}>{m.name}</Text> 
                 </TouchableOpacity>
               </View>
@@ -188,91 +172,14 @@ const Page = () => {
 export default Page;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background || '#F5F5F5',
-  },
-  scroll: {
-    paddingBottom: 100,
-    alignItems: "center",
-    paddingHorizontal: GRID_PADDING,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: Colors.blue || '#4A90E2',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.text || '#333',
-    marginBottom: 15,
-    alignSelf: 'flex-start',
-    width: '100%',
-  },
-  // --- Crisis Button Styles ---
-  crisisContainer: {
-    width: '100%',
-    marginBottom: 30,
-    alignItems: 'center',
-  },
-  meltdownButton: {
-    width: '95%',
-    backgroundColor: Colors.red || '#DC3545', // Primary RED for crisis
-    padding: 25,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
-    flexDirection: 'row',
-    gap: 15,
-  },
-  meltdownButtonText: {
-    color: Colors.white || '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-  },
-  // --- Grid and Tile Styles ---
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    width: '100%',
-  },
-  tile: {
-    width: TILE_WIDTH,
-    aspectRatio: 1, 
-    justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 5,
-    backgroundColor: Colors.cardBackground || '#FFFFFF',
-    borderRadius: 15,
-    elevation: 3,
-    borderColor: Colors.neutral || '#E0E0E0',
-    borderWidth: 1,
-  },
-  crisisTile: {
-    width: TILE_WIDTH,
-    aspectRatio: 1, 
-    justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 5,
-    backgroundColor: Colors.cardBackground || '#FFFFFF', 
-    borderRadius: 15,
-    elevation: 5,
-  },
-  label: {
-    marginTop: 5,
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-    color: Colors.text || '#333',
-  },
+  container: { flex: 1 },
+  scroll: { paddingBottom: 100, alignItems: "center", paddingHorizontal: GRID_PADDING },
+  title: { fontSize: 26, fontWeight: "800", marginBottom: 20, textAlign: 'center' },
+  sectionHeader: { fontSize: 18, fontWeight: '700', marginBottom: 15, alignSelf: 'flex-start', width: '100%' },
+  crisisContainer: { width: '100%', marginBottom: 30, alignItems: 'center' },
+  meltdownButton: { width: '95%', backgroundColor: Colors.red, padding: 25, borderRadius: 15, alignItems: 'center', justifyContent: 'center', elevation: 6, flexDirection: 'row', gap: 15 },
+  meltdownButtonText: { color: Colors.white, fontSize: 22, fontWeight: '900' },
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", width: '100%' },
+  tile: { width: TILE_WIDTH, aspectRatio: 1, justifyContent: "center", alignItems: "center", borderRadius: 15 },
+  label: { marginTop: 5, fontSize: 14, fontWeight: "600", textAlign: "center" },
 });

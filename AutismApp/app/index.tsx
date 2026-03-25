@@ -22,6 +22,8 @@ const Page = () => {
   const [isRegistering, setIsRegistering] = useState(false);
 
   const handleAuth = async () => {
+    // DEBUG: This will show in your terminal exactly which mode the app is in
+    console.log("Current Mode:", isRegistering ? "REGISTRATION" : "LOGIN");
     if (!username || !password) {
       Alert.alert("Error", "Please fill in all fields");
       return;
@@ -83,8 +85,8 @@ const Page = () => {
             {isRegistering && (
               <Animated.View entering={FadeInDown.delay(200)} style={styles.privacyPrompt}>
                 <Text style={styles.privacyText}>
-                  🔒 Privacy Tip: To stay anonymous, use an email address that doesn't 
-                  contain your real name or date of birth.
+                  🔒 Privacy Tip: Use an email address that doesn't 
+                  contain any PERSONAL DETAILS.
                 </Text>
               </Animated.View>
             )}
@@ -116,7 +118,13 @@ const Page = () => {
             </Text>}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)} style={{marginTop: 20}}>
+          <TouchableOpacity 
+          onPress={() => {
+            setIsRegistering(!isRegistering);
+            setUsername(""); // Clear email field on switch
+            setPassword(""); //Clear password field on switch
+          }}
+           style={{marginTop: 20}}>
             <Text style={styles.toggleText}>
               {isRegistering ? "Already have an account? Login" : "First time? Create an account"}
             </Text>

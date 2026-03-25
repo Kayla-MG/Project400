@@ -6,13 +6,13 @@ import {
   ScrollView,
   Alert
 } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Link } from 'expo-router'; 
 import { Ionicons } from '@expo/vector-icons'; 
-// NOTE: Removed unnecessary import 'blue'
 import { Colors } from '@/constants/Colors';
-
+import { useIsFocused } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- 1. Schedule Data Structure ---
 interface Activity {
@@ -32,69 +32,87 @@ const SCHEDULE_DATA: { [key: string]: Activity } = {
 };
 
 const WEEK_DAYS = Object.keys(SCHEDULE_DATA);
-// --- End Schedule Data ---
 
-type Props = {}
-
-const Page = (props: Props) => {
+const Page = () => {
   const {top:safeTop} = useSafeAreaInsets();
-  const userName = "Kayla";
+  const isFocused = useIsFocused(); // Tracks when user navigates back to this tab
 
-  // State to hold the currently selected day
-  const [selectedDay, setSelectedDay] = useState(WEEK_DAYS[0]); // Default to Monday
+  // --- Dynamic Personalization State ---
+  const [displayName, setDisplayName] = useState("User");
+  const [isSoftMode, setIsSoftMode] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(WEEK_DAYS[0]);
+
+  // Load Preferences whenever the screen comes into focus
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const savedName = await AsyncStorage.getItem('userDisplayName');
+        const savedSoftMode = await AsyncStorage.getItem('softMode');
+        
+        if (savedName) setDisplayName(savedName);
+        if (savedSoftMode !== null) setIsSoftMode(JSON.parse(savedSoftMode));
+      } catch (error) {
+        console.error("Error loading home preferences", error);
+      }
+    };
+
+    if (isFocused) {
+      loadPreferences();
+    }
+  }, [isFocused]);
 
   const currentPlan = SCHEDULE_DATA[selectedDay];
 
-
-  // Function to handle the button press and update the schedule
   const handleDayPress = (day: string) => {
     setSelectedDay(day);
   };
   
-  // Custom message based on the plan
   const scheduleMessage = currentPlan.activity === "No Planned Activity" 
     ? `Today is a rest day! You have ${currentPlan.activity} at ${currentPlan.location}.`
     : `You have ${currentPlan.activity} from ${currentPlan.time} at ${currentPlan.location}.`;
 
+  // --- Sensory Design Variables ---
+  // If Soft Mode is ON, we use low-contrast/warm colors to reduce sensory load
+  const dynamicBg = isSoftMode ? '#FDFBF0' : Colors.background; // Soft Cream vs Stark White
+  const dynamicHeader = isSoftMode ? '#555' : Colors.blue; // Soft Charcoal vs Bright Blue
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: dynamicBg }]}>
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: safeTop + 20 }]}>
-        {/* 1. Greeting & User Icon */}
+        
+        {/* 1. Greeting - Uses dynamic name from Settings */}
         <View style={styles.greetingContainer}>
-          <Ionicons name="happy-outline" size={32} color={Colors.blue} />
-          <Text style={styles.headerText}>Hi {userName}!</Text>
+          <Ionicons name="happy-outline" size={32} color={dynamicHeader} />
+          <Text style={[styles.headerText, { color: dynamicHeader }]}>Hi {displayName}!</Text>
         </View>
 
-        {/* 2. Main Action: Log How I Feel */}
+        {/* 2. Main Action */}
         <Link href="/(tabs)/log" asChild style={{ width: '100%' }}>
-          <TouchableOpacity style={[styles.actionCard, styles.logButton]}>
+          <TouchableOpacity style={[styles.actionCard, styles.logButton, isSoftMode && styles.softCard]}>
             <Ionicons name="book-outline" size={36} color={Colors.blue} />
             <Text style={[styles.btnText, {color:Colors.blue}]}>LOG MY DAY</Text>
-            <Text style={[styles.btnSubtitle, { color: Colors.blue }]}>Click LOG MY DAY to record how your feeling.</Text>
+            <Text style={styles.btnSubtitle}>Record how you're feeling.</Text>
           </TouchableOpacity>
         </Link>
 
-        {/* 3. Secondary Action: Calm Down */}
+        {/* 3. Secondary Action */}
         <Link href="/(tabs)/calm" asChild style={{ width: '100%' }}>
-          <TouchableOpacity style={[styles.actionCard, styles.calmButton]}>
+          <TouchableOpacity style={[styles.actionCard, styles.calmButton, isSoftMode && styles.softCard]}>
             <Ionicons name="moon-outline" size={36} color={Colors.blue} />
             <Text style={[styles.btnText, { color: Colors.blue }]}>CALM NOW</Text>
-            <Text style={[styles.btnSubtitle, { color: Colors.blue }]}>Click CALM NOW to access de-escalation tools immediately</Text>
+            <Text style={styles.btnSubtitle}>Access de-escalation tools immediately.</Text>
           </TouchableOpacity>
         </Link>
 
-        {/* Placeholder/Tip Area */}
-        <View style={styles.tipBox}>
+        <View style={[styles.tipBox, isSoftMode && { backgroundColor: '#F0EAD6' }]}>
             <Ionicons name="bulb-outline" size={20} color={Colors.blue} style={{marginRight: 10}} />
-            <Text style={styles.tipText}>Tip: Consistent logging helps us find patterns!</Text>
+            <Text style={styles.tipText}>Tip: Patterns appear when you log daily!</Text>
         </View>
         
-        {/* 5. Daily Schedule Plan Card */}
+        {/* 5. Daily Schedule Plan */}
         <View style={styles.scheduleContainer}>
-            <Text style={styles.scheduleTitle}>What's the Plan?</Text>
-            <Text>Select what day it is to see what activities you have!
-            </Text>
-            {/* Day Selection Buttons */}
+            <Text style={[styles.scheduleTitle, { color: dynamicHeader }]}>What's the Plan?</Text>
+            
             <View style={styles.daySelector}>
                 {WEEK_DAYS.map((day) => (
                     <TouchableOpacity
@@ -115,17 +133,16 @@ const Page = (props: Props) => {
                 ))}
             </View>
 
-            {/* Current Schedule Content */}
-            <View style={styles.scheduleCard}>
+            <View style={[styles.scheduleCard, isSoftMode && styles.softCard]}>
                 <View style={styles.scheduleHeader}>
                     <Ionicons name="calendar-outline" size={24} color={Colors.blue} />
-                    <Text style={styles.scheduleDayHeader}>{selectedDay}'s Activity</Text>
+                    <Text style={[styles.scheduleDayHeader, { color: dynamicHeader }]}>{selectedDay}'s Activity</Text>
                 </View>
                 <Text style={styles.scheduleContent}>
                     <Text style={{fontWeight: '700', color: Colors.blue}}>
-                        {currentPlan.activity === "No Planned Activity" ? 'RELAX:' : 'DON\'T FORGET:'}
+                        {currentPlan.activity === "No Planned Activity" ? 'RELAX:' : 'REMINDER:'}
                     </Text> 
-                    {scheduleMessage}
+                    {" "}{scheduleMessage}
                 </Text>
             </View>
         </View>
@@ -137,147 +154,27 @@ const Page = (props: Props) => {
 export default Page
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scrollContent: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  greetingContainer: {
-    flexDirection: 'row',
-    alignSelf: 'flex-start',
-    alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 10,
-  },
-  headerText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.blue,
-    marginLeft: 10,
-  },
-  actionCard: {
-    width: '100%',
-    borderRadius: 15,
-    padding: 25,
-    alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 8,
-  },
-  logButton: {
-    backgroundColor: Colors.background, // Assumes Colors.background is white or light
-    minHeight: 150,
-  },
-  calmButton: {
-    backgroundColor: '#FFFFFF',
-    minHeight: 120,
-    borderWidth: 2,
-    borderColor: Colors.blue,
-  },
-  btnText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: Colors.blue,
-    marginTop: 10,
-  },
-  // Ensure Colors.text_sub is defined, otherwise fallback to a dark color
-  btnSubtitle: {
-    fontSize: 14,
-    color: '#030303ff', 
-    marginTop: 5,
-    textAlign: 'center',
-  },
-  tipBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E6F0FF',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 20,
-    width: '100%',
-  },
-  tipText: {
-    fontSize: 14,
-  },
-  
-  // --- Daily Schedule Card Styles ---
-  scheduleContainer: {
-    width: '100%',
-    marginTop: 30,
-  },
-  scheduleTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.blue,
-    marginBottom: 15,
-  },
-  daySelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 10,
-    padding: 5,
-  },
-  dayButton: {
-    flex: 1,
-    paddingVertical: 8,
-    marginHorizontal: 2,
-    borderRadius: 8,
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  dayButtonSelected: {
-    backgroundColor: Colors.blue,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  dayButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  dayButtonTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-  },
-  scheduleCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 15,
-    padding: 20,
-    borderLeftWidth: 5,
-    borderLeftColor: Colors.yellow,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  scheduleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  scheduleDayHeader: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: Colors.blue,
-    marginLeft: 10,
-  },
-  scheduleContent: {
-    fontSize: 16,
-    color: Colors.text,
-    lineHeight: 24,
-  }
+  container: { flex: 1 },
+  scrollContent: { alignItems: 'center', paddingHorizontal: 20, paddingBottom: 40 },
+  greetingContainer: { flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', marginBottom: 30, marginTop: 10 },
+  headerText: { fontSize: 28, fontWeight: '700', marginLeft: 10 },
+  actionCard: { width: '100%', borderRadius: 15, padding: 25, alignItems: 'center', marginBottom: 20, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  softCard: { backgroundColor: '#F9F9F9', borderColor: '#DDD', borderWidth: 1, elevation: 0 },
+  logButton: { backgroundColor: '#FFFFFF', minHeight: 140 },
+  calmButton: { backgroundColor: '#FFFFFF', minHeight: 120, borderWidth: 2, borderColor: Colors.blue },
+  btnText: { fontSize: 24, fontWeight: '800', marginTop: 10 },
+  btnSubtitle: { fontSize: 14, color: '#444', marginTop: 5, textAlign: 'center' },
+  tipBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E6F0FF', padding: 15, borderRadius: 10, marginTop: 20, width: '100%' },
+  tipText: { fontSize: 14, color: '#333' },
+  scheduleContainer: { width: '100%', marginTop: 30 },
+  scheduleTitle: { fontSize: 22, fontWeight: '800', marginBottom: 15 },
+  daySelector: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, backgroundColor: '#EEE', borderRadius: 10, padding: 5 },
+  dayButton: { flex: 1, paddingVertical: 8, marginHorizontal: 2, borderRadius: 8, alignItems: 'center' },
+  dayButtonSelected: { backgroundColor: Colors.blue },
+  dayButtonText: { fontSize: 14, fontWeight: '600', color: '#666' },
+  dayButtonTextSelected: { color: '#FFFFFF', fontWeight: '800' },
+  scheduleCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 15, padding: 20, borderLeftWidth: 5, borderLeftColor: Colors.yellow, elevation: 3 },
+  scheduleHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  scheduleDayHeader: { fontSize: 20, fontWeight: '800', marginLeft: 10 },
+  scheduleContent: { fontSize: 16, color: '#444', lineHeight: 24 }
 });
