@@ -1,18 +1,17 @@
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, ActivityIndicator, TextInput, Modal } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router'; 
 import { Colors } from '@/constants/Colors'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSensoryTheme } from '@/constants/useSensoryTheme'; // Called your custom hook
+import { useSensoryTheme } from '@/constants/useSensoryTheme';
 
 const { width } = Dimensions.get("window");
 const TILE_WIDTH = width / 2 - 30; 
 const GRID_PADDING = 15;
 
-// === API Configuration ===
-const API_BASE_URL = 'http://192.168.1.45:3000'; 
+const API_BASE_URL = 'http://192.168.5.227:3000'; 
 
 const MOOD_DATA = [
   { name: "Happy", icon: "happy-outline", color: Colors.green, value: 5, isCrisis: false },
@@ -35,14 +34,18 @@ const MELTDOWN_DATA = {
 
 const Page = () => {
   const router = useRouter(); 
-  const theme = useSensoryTheme(); // CALL: Hook for Soft Mode
+  const theme = useSensoryTheme();
   const { top: safeTop } = useSafeAreaInsets();
   
-  const [selectedMood, setSelectedMood] = useState<typeof MOOD_DATA[0] | null>(null);
+  const [selectedMood, setSelectedMood] = useState<any>(null);
   const [isLogging, setIsLogging] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Load actual User ID from login session
+  // New states for Trigger Notes and Buddy logic
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [triggerNote, setTriggerNote] = useState("");
+  const [pendingMood, setPendingMood] = useState<any>(null);
+
   useEffect(() => {
     const getUserId = async () => {
       const id = await AsyncStorage.getItem('userId');
@@ -51,9 +54,36 @@ const Page = () => {
     getUserId();
   }, []);
 
-  const sendLogToApi = async (mood: typeof MOOD_DATA[0] | typeof MELTDOWN_DATA, navigated: boolean) => {
+const checkWellbeingStreak = async () => {
+    if (!currentUserId) return;
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/check-wellbeing/${currentUserId}`);
+        const data = await response.json();
+
+        if (data.status === 'crisis') {
+            Alert.alert(
+                "💙 Buddy Check-In",
+                "Hey! I see you've been having some harder days lately. Is there anything I can do to help? Should we reach out for extra support?",
+                [
+                    { text: "I'm okay", style: "cancel" },
+                    { text: "Get Help", onPress: () => router.push('/calm') }
+                ]
+            );
+        } else if (data.status === 'positive') {
+            Alert.alert(
+                "💚 High Five!",
+                "Hey! We see you've been having some positive days lately. Take note of what you are doing right now — maybe you can add it to your toolbox!",
+                [{ text: "Awesome!", style: "default" }]
+            );
+        }
+    } catch (e) {
+        console.log("Buddy check failed:", e);
+    }
+};
+
+  const sendLogToApi = async (mood: any, navigated: boolean, note: string = "") => {
     if (!currentUserId) {
-        Alert.alert("Error", "User session not found. Please log in again.");
+        Alert.alert("Error", "User session not found.");
         return;
     }
 
@@ -61,11 +91,11 @@ const Page = () => {
     const isMeltdownForDb = (mood.isCrisis || mood.name === "Crisis") ? 1 : 0;
     
     const logDetails = {
-        userId: currentUserId, // Using real ID from AsyncStorage
+        userId: currentUserId,
         feelingName: mood.name,
         severity: mood.value,
         isMeltdown: isMeltdownForDb,
-        diaryNotes: "",
+        diaryNotes: note, 
     };
 
     try {
@@ -76,8 +106,11 @@ const Page = () => {
         });
 
         if (response.ok) {
+            // Run the Buddy Check immediately after a successful log
+            await checkWellbeingStreak();
+            
             if (!navigated) {
-                 Alert.alert('Logged', `Successfully recorded your ${mood.name} feeling.`, [{ text: 'OK' }]);
+                 Alert.alert('Logged', `Successfully recorded your ${mood.name} feeling.`);
             }
         } else {
             Alert.alert('Error', 'Server could not save this entry.');
@@ -86,43 +119,69 @@ const Page = () => {
         Alert.alert('Network Error', 'Connection to server failed.');
     } finally {
         setIsLogging(false);
+        setTriggerNote(""); // Reset note
     }
   };
 
-  const checkCrisisAndNavigate = (mood: typeof MOOD_DATA[0] | typeof MELTDOWN_DATA) => {
+  const handleMoodPress = (mood: any) => {
     if (mood.isCrisis) {
-      Alert.alert(
-        "Immediate Support?",
-        `You feel '${mood.name}'. Need the Calm Now tools?`,
-        [
-          { text: "Just Log It", onPress: () => sendLogToApi(mood, false) },
-          { text: "Yes, Calm Now", onPress: () => {
-              sendLogToApi(mood, true); 
-              router.push('/calm');
-            }, style: 'destructive'
-          },
-        ]
-      );
+      setPendingMood(mood);
+      setShowNoteModal(true);
     } else {
-      sendLogToApi(mood, false); 
+      sendLogToApi(mood, false);
     }
   };
 
-  // --- Dynamic Styles for Soft Mode ---
+  const submitCrisisWithNote = (navigated: boolean) => {
+    setShowNoteModal(false);
+    sendLogToApi(pendingMood, navigated, triggerNote);
+    if (navigated) {
+        router.push('/calm');
+    }
+  };
+
   const dynamicBg = theme.background;
   const dynamicTitle = theme.isSoftMode ? '#555' : Colors.blue;
   const dynamicText = theme.text;
 
   return (
     <View style={[styles.container, { backgroundColor: dynamicBg }]}>
+      
+      {/* TRIGGER NOTE MODAL */}
+      <Modal visible={showNoteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                <Text style={[styles.modalTitle, { color: dynamicText }]}>What triggered this?</Text>
+                <TextInput
+                    style={[styles.noteInput, { color: dynamicText, borderColor: theme.isSoftMode ? '#DDD' : '#EEE' }]}
+                    placeholder="e.g. Busy shopping mall, loud noise..."
+                    placeholderTextColor="#999"
+                    multiline
+                    value={triggerNote}
+                    onChangeText={setTriggerNote}
+                />
+                <View style={styles.modalButtons}>
+                    <TouchableOpacity style={[styles.modalBtn, { backgroundColor: Colors.blue }]} onPress={() => submitCrisisWithNote(false)}>
+                        <Text style={styles.btnText}>Just Log</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.modalBtn, { backgroundColor: Colors.red }]} onPress={() => submitCrisisWithNote(true)}>
+                        <Text style={styles.btnText}>Log & Calm Now</Text>
+                    </TouchableOpacity>
+                </View>
+                <TouchableOpacity onPress={() => setShowNoteModal(false)} style={styles.cancelLink}>
+                    <Text style={{color: '#888'}}>Cancel</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+      </Modal>
+
       <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: safeTop + 20 }]}> 
         <Text style={[styles.title, { color: dynamicTitle }]}>Daily Check-In Log</Text>
 
-        {/* 1. CRISIS BUTTON */}
         <View style={styles.crisisContainer}>
           <TouchableOpacity 
             style={[styles.meltdownButton, theme.isSoftMode && { backgroundColor: '#D9534F', elevation: 0 }]}
-            onPress={() => checkCrisisAndNavigate(MELTDOWN_DATA)}
+            onPress={() => handleMoodPress(MELTDOWN_DATA)}
             disabled={isLogging}
           >
             {isLogging ? (
@@ -154,7 +213,7 @@ const Page = () => {
                       elevation: theme.isSoftMode ? 0 : 3
                     }
                   ]} 
-                  onPress={() => { setSelectedMood(m); checkCrisisAndNavigate(m); }}
+                  onPress={() => handleMoodPress(m)}
                   disabled={isLogging}
                 >
                   <Ionicons name={m.icon as any} size={40} color={isSelected ? Colors.white : m.color} />
@@ -182,4 +241,14 @@ const styles = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", width: '100%' },
   tile: { width: TILE_WIDTH, aspectRatio: 1, justifyContent: "center", alignItems: "center", borderRadius: 15 },
   label: { marginTop: 5, fontSize: 14, fontWeight: "600", textAlign: "center" },
+  
+  // Modal Styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '85%', padding: 25, borderRadius: 20, alignItems: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15 },
+  noteInput: { width: '100%', borderBottomWidth: 1, minHeight: 60, padding: 10, textAlignVertical: 'top', marginBottom: 20 },
+  modalButtons: { flexDirection: 'row', gap: 10, width: '100%' },
+  modalBtn: { flex: 1, padding: 15, borderRadius: 10, alignItems: 'center' },
+  btnText: { color: 'white', fontWeight: 'bold', fontSize: 14, textAlign: 'center' },
+  cancelLink: { marginTop: 20 }
 });

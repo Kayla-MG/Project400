@@ -40,7 +40,7 @@ const Page = () => {
     
     try {
       // Ensure this matches your laptop's current IPv4 address
-      const response = await fetch(`http://192.168.1.45:3000${endpoint}`, {
+      const response = await fetch(`http://192.168.5.227:3000${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
