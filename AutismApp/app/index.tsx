@@ -73,7 +73,7 @@ const Page = () => {
       <ImageBackground source={require("@/assets/images/jigsaw.jpg")} style={{flex:1}} resizeMode="cover">
         <View style={styles.wrapper}>
           <Animated.Text style={styles.title} entering={FadeInRight.delay(300)}>
-            {isRegistering ? "Create Account" : "Autism App"}
+            {isRegistering ? "Create Account" : "MyToolbox"}
           </Animated.Text>
           
           <Animated.Text style={styles.description} entering={FadeInRight.delay(500)}>
