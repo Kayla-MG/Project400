@@ -8,16 +8,20 @@ const jwt = require('jsonwebtoken');
 dotenv.config();
 
 const app = express();
+// Render automatically provides a PORT, otherwise it defaults to 3000
 const port = process.env.PORT || 3000;
 
+// Optimized Pool for Railway
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
+    port: process.env.DB_PORT || 3306, // Added explicit port
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    ssl: { rejectUnauthorized: false } // Required by some cloud providers for secure connection
 });
 
 app.use(cors());
@@ -43,7 +47,7 @@ app.post('/api/register', async (req, res) => {
         if (err.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ error: "This email is already registered." });
         }
-        res.status(500).json({ error: "Database error: " + err.message });
+        res.status(500).json({ error: "Database error" });
     }
 });
 
@@ -52,12 +56,13 @@ app.post('/api/login', async (req, res) => {
     try {
         const [users] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
         if (users.length === 0) return res.status(401).json({ error: "Invalid credentials" });
+        
         const validPassword = await bcrypt.compare(password, users[0].password);
         if (!validPassword) return res.status(401).json({ error: "Invalid credentials" });
 
         const token = jwt.sign(
             { userId: users[0].id }, 
-            process.env.JWT_SECRET || 'your_secret_key', 
+            process.env.JWT_SECRET, // Uses your Render variable
             { expiresIn: '7d' }
         );
 
@@ -67,6 +72,7 @@ app.post('/api/login', async (req, res) => {
             userId: users[0].id 
         });
     } catch (err) {
+        console.error("LOGIN ERROR:", err);
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -83,7 +89,7 @@ app.post('/api/log/mood', async (req, res) => {
             [feelingName]
         );
         if (feelingResult.length === 0) {
-            return res.status(404).json({ error: `Invalid feeling name: ${feelingName}.` });
+            return res.status(404).json({ error: `Invalid feeling name.` });
         }
         const feelingId = feelingResult[0].feeling_id;
         const [result] = await pool.query(
@@ -98,7 +104,7 @@ app.post('/api/log/mood', async (req, res) => {
     }
 });
 
-// --- NEW: DASHBOARD STATS ENDPOINT ---
+// --- DASHBOARD STATS ENDPOINT ---
 app.get('/api/dashboard/stats/:userId', async (req, res) => {
     const { userId } = req.params;
     try {
@@ -118,27 +124,19 @@ app.get('/api/dashboard/stats/:userId', async (req, res) => {
     }
 });
 
+// --- WELLBEING CHECK ENDPOINT ---
 app.get('/api/check-wellbeing/:userId', async (req, res) => {
     const { userId } = req.params;
     try {
-        // Fetch the 3 most recent logs
         const [recentLogs] = await pool.query(
             'SELECT is_meltdown FROM log_entry WHERE user_id = ? ORDER BY timestamp DESC LIMIT 3',
             [userId]
         );
 
-        // We only trigger if we actually have at least 3 logs
         if (recentLogs.length < 3) {
             return res.json({ status: 'neutral' });
         }
 
-        // Check for 3 Meltdowns in a row
-        //const isHardStreak = recentLogs.every(log => Number(log.is_meltdown) === 1);
-    
-        // Check for 3 Positive entries in a row (No meltdowns)
-        //const isPositiveStreak = recentLogs.every(log => Number(log.is_meltdown) === 0);
-        
-        // Replace your current streak lines with these:
         const isHardStreak = recentLogs.every(log => log.is_meltdown == 1);
         const isPositiveStreak = recentLogs.every(log => log.is_meltdown == 0);     
 
@@ -154,7 +152,8 @@ app.get('/api/check-wellbeing/:userId', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-// The '0.0.0.0' is the magic part—it tells Node to accept outside connections
+
+// The '0.0.0.0' allows Render to route external traffic to your app
 app.listen(port, '0.0.0.0', () => {
-    console.log(`Server is LIVE on your network at http://192.168.5.227:${port}`);
+    console.log(`Backend is live and listening on port ${port}`);
 });
