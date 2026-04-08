@@ -38,13 +38,13 @@ const Page = () => {
     setLoading(true);
     const endpoint = isRegistering ? '/api/register' : '/api/login';
     
-    try {
-      // Ensure this matches your laptop's current IPv4 address
-      const response = await fetch(`http://192.168.5.227:3000${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
+   try {
+  // Pointing to the live Render backend instead of local IPv4
+  const response = await fetch(`https://project400-api.onrender.com${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
 
       const data = await response.json();
 

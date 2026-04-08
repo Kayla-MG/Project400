@@ -11,7 +11,7 @@ const { width } = Dimensions.get("window");
 const TILE_WIDTH = width / 2 - 30; 
 const GRID_PADDING = 15;
 
-const API_BASE_URL = 'http://192.168.5.227:3000'; 
+const API_BASE_URL = 'https://project400-api.onrender.com';
 
 const MOOD_DATA = [
   { name: "Happy", icon: "happy-outline", color: Colors.green, value: 5, isCrisis: false },
