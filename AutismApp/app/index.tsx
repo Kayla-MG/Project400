@@ -13,6 +13,9 @@ import { useRouter } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import Animated, {FadeInDown, FadeInRight} from "react-native-reanimated";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
 
 const Page = () => {
   const router = useRouter();
@@ -20,6 +23,7 @@ const Page = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+
 
   const handleAuth = async () => {
     // DEBUG: This will show in your terminal exactly which mode the app is in
@@ -70,7 +74,11 @@ const Page = () => {
 
   return (
     <View style={styles.container}>
-      <ImageBackground source={require("@/assets/images/jigsaw.jpg")} style={{flex:1}} resizeMode="cover">
+      <ImageBackground 
+        source={require("@/assets/images/jigsaw.jpg")} 
+        // 2. UPDATE THIS STYLE TO USE THE DIMENSIONS
+        style={{ width: width, height: height, flex: 1 }} 
+        resizeMode="cover">
         <View style={styles.wrapper}>
           <Animated.Text style={styles.title} entering={FadeInRight.delay(300)}>
             {isRegistering ? "Create Account" : "MyToolbox"}
