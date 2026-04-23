@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Linki
 import { Ionicons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSensoryTheme } from '@/constants/useSensoryTheme'; // Ensure this path is correct
+import { useSensoryTheme, ALL_TOOLS } from '@/constants/useSensoryTheme';
 
 const { width } = Dimensions.get("window");
 
@@ -170,13 +170,9 @@ const CalmDownPage = () => {
     const theme = useSensoryTheme();
     const [activeTool, setActiveTool] = useState<string | null>(null);
 
-    const tools: Tool[] = [
-        { name: 'Visual Calming', icon: 'eye-outline', color: '#56CCF2', actionType: 'visual' }, 
-        { name: 'Stretch / Move', icon: 'walk-outline', color: '#FFC107', actionType: 'stretch' },
-        { name: 'Listen To Music', icon: 'musical-notes-outline', color: '#8A2BE2', actionType: 'link' }, 
-        { name: 'Fidget / Squeeze', icon: 'hand-left-outline', color: '#F9A10A', actionType: 'fidget' }, 
-        { name: 'Countdown / Timer', icon: 'time-outline', color: '#DB2DCD', actionType: 'timer' },
-    ];
+    const visibleTools = ALL_TOOLS
+        .filter(t => theme.enabledTools[t.name] !== false)
+        .map(t => ({ ...t, color: theme.toolColours[t.name] || '#888' }));
 
     if (activeTool === 'timer') return <CountdownTimer onStop={() => setActiveTool(null)} />;
     if (activeTool === 'stretch') return <StretchMoveGuide onStop={() => setActiveTool(null)} />;
@@ -190,7 +186,7 @@ const CalmDownPage = () => {
                 <Text style={[styles.subtitle, { color: theme.text }]}>Tap a strategy for immediate relief.</Text>
 
                 <View style={styles.grid}>
-                    {tools.map((t) => (
+                    {visibleTools.map((t) => (
                         <TouchableOpacity
                             key={t.name}
                             style={[styles.toolButton, { backgroundColor: theme.isSoftMode ? theme.card : t.color, borderWidth: theme.isSoftMode ? 1 : 0, borderColor: '#DDD' }]}

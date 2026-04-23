@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, ActivityIndicator, TextInput, Modal } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ScrollView, Alert, ActivityIndicator, TextInput, Modal, Linking } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router'; 
@@ -59,15 +59,25 @@ const checkWellbeingStreak = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/api/check-wellbeing/${currentUserId}`);
         const data = await response.json();
+        const supportNumber = await AsyncStorage.getItem('supportNumber');
 
-        if (data.status === 'crisis') {
+       if (data.status === 'crisis') {
+            const buttons: any[] = [
+                { text: "I'm okay", style: "cancel" },
+                { text: "Calm Now", onPress: () => router.push('/calm') }
+            ];
+
+            if (supportNumber) {
+                buttons.push({
+                    text: "📞 Call Support",
+                    onPress: () => Linking.openURL(`tel:${supportNumber}`)
+                });
+            }
+
             Alert.alert(
                 "💙 Buddy Check-In",
                 "Hey! I see you've been having some harder days lately. Is there anything I can do to help? Should we reach out for extra support?",
-                [
-                    { text: "I'm okay", style: "cancel" },
-                    { text: "Get Help", onPress: () => router.push('/calm') }
-                ]
+                buttons
             );
         } else if (data.status === 'positive') {
             Alert.alert(

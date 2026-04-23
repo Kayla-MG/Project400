@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Alert
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import Animated, {FadeInDown, FadeInRight} from "react-native-reanimated";
@@ -23,6 +23,16 @@ const Page = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  
+  useEffect(() => {
+  const checkToken = async () => {
+    const token = await AsyncStorage.getItem('userToken');
+    if (token) {
+      router.replace('/(tabs)');
+    }
+  };
+  checkToken();
+}, []);
 
 
   const handleAuth = async () => {
